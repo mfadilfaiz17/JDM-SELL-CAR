@@ -3,9 +3,8 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
-import { motion } from 'motion/react';
 import { ALL_CARS, Car } from '../constants';
-import { Search, X, BarChart2, Heart, ChevronLeft, ChevronRight } from 'lucide-react';
+import { Search, BarChart2, Heart, ChevronLeft, ChevronRight, X } from 'lucide-react';
 import React, { useState, useEffect } from 'react';
 import { useSearchParams } from 'react-router-dom';
 import ComparisonModal from '../components/ComparisonModal';
@@ -114,7 +113,8 @@ export default function BuyCar({ onSelectCar }: InventoryProps) {
   };
 
   const formatIDR = (price: number) => {
-    const idr = price * 16300; // Approximate conversion rate
+    // price is in thousands (k), convert to actual USD then to IDR
+    const idr = price * 1000 * 16250; // 1 USD = Rp 16,250
     return new Intl.NumberFormat('id-ID', {
       style: 'currency',
       currency: 'IDR',
@@ -122,25 +122,43 @@ export default function BuyCar({ onSelectCar }: InventoryProps) {
     }).format(idr);
   };
 
-  const renderCarGrid = (cars: Car[]) => (
-    <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-8">
-      {cars.map((car, index) => (
-        <motion.div
+  const renderCarGrid = (cars: Car[]) => {
+    // Show empty state
+    if (cars.length === 0) {
+      return (
+        <div className="col-span-full py-24 text-center">
+          <div className="w-16 h-16 mx-auto mb-6 bg-zinc-900 border border-white/5 flex items-center justify-center">
+            <Search className="w-8 h-8 text-zinc-700" />
+          </div>
+          <div className="text-zinc-600 font-mono text-[10px] tracking-[0.5em] mb-4">NO_RESULTS_FOUND</div>
+          <div className="text-2xl font-black italic text-zinc-800 uppercase mb-8">No Cars Match Your Criteria</div>
+          <button
+            onClick={() => {
+              setFilter('');
+              setSelectedBrand('ALL');
+              setSelectedModel('ALL');
+              setSelectedCondition('ALL');
+              setSelectedFuelType('ALL');
+              setActiveCategory('ALL');
+            }}
+            className="px-8 py-3 bg-cyan-500 text-black font-black uppercase text-xs tracking-[0.3em] hover:bg-white transition-all"
+          >
+            Clear All Filters
+          </button>
+        </div>
+      );
+    }
+
+    return (
+      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-8">
+        {cars.map((car, index) => (
+        <div
           key={car.id}
-          initial="initial"
-          animate="animate"
-          whileHover="hover"
-          layout
-          variants={{
-            initial: { opacity: 0, y: 20 },
-            animate: { opacity: 1, y: 0, transition: { delay: index * 0.05 } },
-            hover: { y: -8, scale: 1.02 }
-          }}
           onClick={() => onSelectCar(car)}
-          className="group cursor-crosshair relative"
+          className="group cursor-pointer relative hover:-translate-y-2 transition-transform duration-300"
         >
           {/* Background Glow */}
-          <div className="absolute inset-0 bg-cyan-500/0 group-hover:bg-cyan-500/2 transition-colors duration-500 rounded-none pointer-events-none" />
+          <div className="absolute inset-0 bg-cyan-500/0 group-hover:bg-cyan-500/2 transition-colors duration-300 rounded-none pointer-events-none" />
           
           <div className="bg-zinc-950 border border-white/5 p-6 relative z-10 hover:border-cyan-500/50 transition-all duration-300 overflow-hidden h-full flex flex-col">
             {/* Card Decoration */}
@@ -181,17 +199,13 @@ export default function BuyCar({ onSelectCar }: InventoryProps) {
             
             <div className="h-48 mb-6 flex items-center justify-center p-2 relative overflow-hidden">
               {/* Image Hologram Effect */}
-              <div className="absolute inset-0 bg-linear-to-t from-cyan-500/0 via-cyan-500/0 to-cyan-500/0 group-hover:from-cyan-500/5 transition-all duration-500" />
+              <div className="absolute inset-0 bg-linear-to-t from-cyan-500/0 via-cyan-500/0 to-cyan-500/0 group-hover:from-cyan-500/5 transition-all duration-300" />
                   {car.image ? (
-                    <motion.img 
-                      variants={{
-                        hover: { scale: 1.08, x: 5 }
-                      }}
-                      transition={{ duration: 0.6, ease: "easeOut" }}
-                      src={car.image} 
+                    <img
+                      src={car.image}
                       alt={car.famousName}
-                      className="w-full h-full object-cover filter grayscale group-hover:grayscale-0 transition-all duration-500 relative z-10"
-                      referrerPolicy="no-referrer"
+                      loading="lazy"
+                      className="w-full h-full object-contain filter grayscale group-hover:grayscale-0 transition-all duration-300 relative z-10"
                     />
                   ) : (
                     <div className="w-full h-full flex items-center justify-center border border-white/5 bg-white/5">
@@ -208,7 +222,7 @@ export default function BuyCar({ onSelectCar }: InventoryProps) {
               {/* Primary Info (Visible Always) */}
               <div className="mt-auto pt-4 border-t border-white/5">
                 <div className="flex items-center justify-between mb-1">
-                  <span className="text-2xl font-black italic text-white group-hover:scale-105 transition-transform origin-left">${car.price}</span>
+                  <span className="text-2xl font-black italic text-white group-hover:scale-105 transition-transform origin-left">${car.price}k</span>
                   <div className="flex items-center gap-3">
                     <button
                       onClick={(e) => toggleCompare(e, car)}
@@ -231,13 +245,7 @@ export default function BuyCar({ onSelectCar }: InventoryProps) {
               </div>
 
               {/* Hover Reveal Details */}
-              <motion.div 
-                variants={{
-                  initial: { height: 0, opacity: 0 },
-                  hover: { height: 'auto', opacity: 1, transition: { duration: 0.3 } }
-                }}
-                className="overflow-hidden"
-              >
+              <div className="max-h-0 group-hover:max-h-[500px] opacity-0 group-hover:opacity-100 overflow-hidden transition-all duration-300">
                 <div className="pt-6 space-y-4">
                   <div className="grid grid-cols-2 gap-4 pb-4 border-b border-white/5">
                     <div className="space-y-1">
@@ -274,17 +282,18 @@ export default function BuyCar({ onSelectCar }: InventoryProps) {
                   <button className="w-full py-3 bg-cyan-500 text-black text-[10px] font-black uppercase tracking-[0.3em] hover:bg-white transition-all transform translate-y-2 group-hover:translate-y-0 duration-300">
                     Details
                   </button>
-                  <button className="w-full py-3 bg-white/10 border border-cyan-500/50 text-cyan-500 text-[10px] font-black uppercase tracking-[0.3em] hover:bg-cyan-500/20 transition-all transform translate-y-2 group-hover:translate-y-0 duration-300">
+                  <button className="w-full py-3 bg-white/10 border border-cyan-500/50 text-cyan-500 text-[10px] font-black uppercase tracking-[0.3em] hover:bg-cyan-500/20 transition-all duration-300">
                     Contact Seller
                   </button>
                 </div>
-              </motion.div>
+              </div>
             </div>
           </div>
-        </motion.div>
+        </div>
       ))}
     </div>
-  );
+    );
+  };
 
   return (
     <div className="px-6 md:px-12 py-16 bg-[#050505] min-h-screen relative overflow-hidden">
@@ -336,12 +345,8 @@ export default function BuyCar({ onSelectCar }: InventoryProps) {
 
         {/* Advanced Filters */}
         {showFilters && (
-          <motion.div
-            initial={{ opacity: 0, height: 0 }}
-            animate={{ opacity: 1, height: 'auto' }}
-            exit={{ opacity: 0, height: 0 }}
-            className="bg-zinc-950/50 border border-white/5 p-6 backdrop-blur-md mt-6 grid grid-cols-1 md:grid-cols-2 lg:grid-cols-5 gap-6"
-          >
+          <div className="bg-zinc-950/50 border border-white/5 p-6 backdrop-blur-md mt-6 grid grid-cols-1 md:grid-cols-2 lg:grid-cols-5 gap-6 animate-fadeIn">
+
             {/* Brand Filter */}
             <div className="space-y-2">
               <label className="text-[9px] font-mono text-zinc-600 uppercase tracking-[0.2em]">Brand</label>
@@ -489,7 +494,7 @@ export default function BuyCar({ onSelectCar }: InventoryProps) {
                 Reset All
               </button>
             </div>
-          </motion.div>
+          </div>
         )}
       </div>
 
@@ -567,11 +572,8 @@ export default function BuyCar({ onSelectCar }: InventoryProps) {
 
       {/* Floating Comparison Bar */}
       {compareList.length > 0 && (
-        <motion.div
-          initial={{ y: 100 }}
-          animate={{ y: 0 }}
-          className="fixed bottom-0 left-0 right-0 z-40 bg-zinc-950/90 backdrop-blur-xl border-t border-cyan-500/30 p-4 md:px-12 flex items-center justify-between shadow-[0_-20px_50px_rgba(0,0,0,0.8)]"
-        >
+        <div className="fixed bottom-0 left-0 right-0 z-40 bg-zinc-950/90 backdrop-blur-xl border-t border-cyan-500/30 p-4 md:px-12 flex items-center justify-between shadow-[0_-20px_50px_rgba(0,0,0,0.8)] animate-slideUp">
+
           <div className="flex items-center gap-6 overflow-x-auto pb-2 md:pb-0">
             <div className="text-cyan-500 font-mono text-[10px] tracking-widest uppercase hidden md:block">
               COMPARE_QUEUE [{compareList.length}/3]
@@ -580,7 +582,12 @@ export default function BuyCar({ onSelectCar }: InventoryProps) {
               {compareList.map(car => (
                 <div key={car.id} className="relative group flex items-center gap-3 bg-white/5 border border-white/10 p-2 pr-4 min-w-[150px]">
                   <div className="w-12 h-8 shrink-0">
-                    <img src={car.image || ''} alt="" className="w-full h-full object-contain mix-blend-screen" />
+                    <img
+                      src={car.image || ''}
+                      alt={car.famousName}
+                      loading="lazy"
+                      className="w-full h-full object-contain mix-blend-screen"
+                    />
                   </div>
                   <div className="grow">
                     <div className="text-[9px] font-black italic uppercase leading-none truncate w-24 text-white">{car.famousName}</div>
@@ -615,7 +622,7 @@ export default function BuyCar({ onSelectCar }: InventoryProps) {
               Initialize_Comparison
             </button>
           </div>
-        </motion.div>
+        </div>
       )}
 
       <ComparisonModal 

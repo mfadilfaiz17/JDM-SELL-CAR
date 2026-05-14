@@ -46,7 +46,7 @@ export default function CollectionGrid({ onSelectCar }: CollectionGridProps) {
                   whileHover={{ scale: 1.05 }}
                   src={car.image} 
                   alt={car.famousName}
-                  className="w-full h-full object-cover filter grayscale group-hover:grayscale-0 transition-all"
+                  className="w-full h-full object-contain filter grayscale group-hover:grayscale-0 transition-all"
                   referrerPolicy="no-referrer"
                 />
               ) : (
@@ -81,7 +81,7 @@ export default function CollectionGrid({ onSelectCar }: CollectionGridProps) {
               <div className="flex items-center justify-between">
                 <div>
                   <span className="text-sm font-mono text-zinc-600 uppercase block mb-0.5">Rate</span>
-                  <span className="text-2xl font-black italic text-white">${car.price}<span className="text-[9px] italic text-zinc-500 font-normal">/hr</span></span>
+                  <span className="text-2xl font-black italic text-white">${car.price}k<span className="text-[9px] italic text-zinc-500 font-normal">/hr</span></span>
                 </div>
                 
                 <motion.button 

@@ -7,7 +7,6 @@ import React from 'react';
 import { motion, AnimatePresence } from 'motion/react';
 import { X, Gauge, Settings, Users, ShieldCheck, Zap } from 'lucide-react';
 import { Car } from '../constants';
-import ImageGallery from './ImageGallery';
 
 interface CarModalProps {
   car: Car | null;
@@ -18,7 +17,8 @@ export default function CarModal({ car, onClose }: CarModalProps) {
   if (!car) return null;
 
   const formatIDR = (price: number) => {
-    const idr = price * 16300; // Approximate conversion rate
+    // price is in thousands (k), convert to actual USD then to IDR
+    const idr = price * 1000 * 16250; // 1 USD = Rp 16,250
     return new Intl.NumberFormat('id-ID', {
       style: 'currency',
       currency: 'IDR',
@@ -58,7 +58,7 @@ export default function CarModal({ car, onClose }: CarModalProps) {
 
           <div className="grid grid-cols-1 lg:grid-cols-2">
             {/* Image Section */}
-            <div className="relative h-96 lg:h-auto lg:min-h-[600px] bg-[#0a0a0a] flex items-center justify-center p-8 overflow-hidden">
+            <div className="relative h-96 lg:h-auto lg:min-h-[600px] bg-[#0a0a0a] flex items-center justify-center p-12 overflow-hidden">
               <div className="absolute inset-0 grid-bg opacity-20" />
               <div className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 opacity-10 select-none">
                 <h2 className="text-9xl font-black italic">{car.brand}</h2>
@@ -67,13 +67,11 @@ export default function CarModal({ car, onClose }: CarModalProps) {
               {/* Use ImageGallery if multiple images, otherwise show single image */}
               {images.length > 0 ? (
                 <div className="relative z-10 w-full h-full flex items-center justify-center">
-                  <div className="w-full h-full max-h-[400px]">
-                    <ImageGallery 
-                      images={images}
-                      title={car.famousName}
-                      className="h-full"
-                    />
-                  </div>
+                  <img 
+                    src={images[0]}
+                    alt={car.famousName}
+                    className="w-full h-full object-contain"
+                  />
                 </div>
               ) : (
                 <div className="relative z-10 w-full h-full flex items-center justify-center border border-white/5 bg-white/5">
@@ -110,9 +108,9 @@ export default function CarModal({ car, onClose }: CarModalProps) {
 
               {/* Performance Visualization */}
               <div className="space-y-4">
-                <StatBar label="Acceleration" value={95} color="bg-cyan-500" />
-                <StatBar label="Handing" value={88} color="bg-magenta-500" />
-                <StatBar label="Mod Priority" value={100} color="bg-white" />
+                <StatBar label="Acceleration" value={car.acceleration || 75} color="bg-cyan-500" />
+                <StatBar label="Handling" value={car.handling || 75} color="bg-purple-500" />
+                <StatBar label="Mod Priority" value={car.modPriority || 75} color="bg-white" />
               </div>
 
               {/* Pricing & Footer */}
@@ -121,8 +119,8 @@ export default function CarModal({ car, onClose }: CarModalProps) {
                   <span className="block text-[9px] uppercase font-bold text-zinc-500 mb-2 font-mono">Archive Rate</span>
                   <div className="flex flex-col">
                     <div className="flex items-baseline gap-2">
-                      <span className="text-4xl font-black italic tracking-tighter text-white">${car.price}</span>
-                      <span className="text-[10px] text-zinc-500 uppercase font-bold">/ Daily</span>
+                      <span className="text-4xl font-black italic tracking-tighter text-white">${car.price}k</span>
+                      <span className="text-[10px] text-zinc-500 uppercase font-bold">USD</span>
                     </div>
                     <span className="text-xs font-mono text-cyan-500 uppercase tracking-widest mt-1">
                       {formatIDR(car.price)}

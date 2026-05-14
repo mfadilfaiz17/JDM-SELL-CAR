@@ -3,21 +3,33 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
-import { useState } from 'react';
+import React, { useState, Suspense } from 'react';
 import { BrowserRouter as Router, Routes, Route } from 'react-router-dom';
 import Navbar from './components/Navbar';
-import Home from './pages/Home';
-import BuyCar from './pages/BuyCar';
-import Garage from './pages/Garage';
-import SellCar from './pages/SellCar';
-import Contact from './pages/Contact';
-import Favorites from './pages/Favorites';
-import Login from './pages/Login';
-import Register from './pages/Register';
-import UserProfile from './pages/UserProfile';
-import CarModal from './components/CarModal';
 import ProtectedRoute from './components/ProtectedRoute';
+import CarModal from './components/CarModal';
 import { Car } from './constants';
+
+// Lazy load pages for code splitting
+const Home = React.lazy(() => import('./pages/Home'));
+const BuyCar = React.lazy(() => import('./pages/BuyCar'));
+const Garage = React.lazy(() => import('./pages/Garage'));
+const SellCar = React.lazy(() => import('./pages/SellCar'));
+const Contact = React.lazy(() => import('./pages/Contact'));
+const Favorites = React.lazy(() => import('./pages/Favorites'));
+const Login = React.lazy(() => import('./pages/Login'));
+const Register = React.lazy(() => import('./pages/Register'));
+const UserProfile = React.lazy(() => import('./pages/UserProfile'));
+
+// Simple loading fallback
+const LoadingFallback = () => (
+  <div className="min-h-screen bg-[#050505] flex items-center justify-center">
+    <div className="text-center">
+      <div className="w-12 h-12 mx-auto mb-4 border-2 border-cyan-500/30 border-t-cyan-500 rounded-full animate-spin"></div>
+      <p className="text-cyan-500 font-mono text-xs uppercase tracking-widest">Loading...</p>
+    </div>
+  </div>
+);
 
 export default function App() {
   const [selectedCar, setSelectedCar] = useState<Car | null>(null);
@@ -32,38 +44,40 @@ export default function App() {
         <Navbar onSelectCar={setSelectedCar} />
         
         <main className="relative z-10">
-          <Routes>
-            <Route path="/" element={<Home onSelectCar={setSelectedCar} />} />
-            <Route path="/buy" element={<BuyCar onSelectCar={setSelectedCar} />} />
-            <Route path="/favorites" element={<Favorites onSelectCar={setSelectedCar} />} />
-            <Route path="/login" element={<Login />} />
-            <Route path="/register" element={<Register />} />
-            <Route 
-              path="/profile" 
-              element={
-                <ProtectedRoute>
-                  <UserProfile />
-                </ProtectedRoute>
-              } 
-            />
-            <Route 
-              path="/garage" 
-              element={
-                <ProtectedRoute>
-                  <Garage />
-                </ProtectedRoute>
-              } 
-            />
-            <Route 
-              path="/sell" 
-              element={
-                <ProtectedRoute>
-                  <SellCar />
-                </ProtectedRoute>
-              } 
-            />
-            <Route path="/contact" element={<Contact />} />
-          </Routes>
+          <Suspense fallback={<LoadingFallback />}>
+            <Routes>
+              <Route path="/" element={<Home onSelectCar={setSelectedCar} />} />
+              <Route path="/buy" element={<BuyCar onSelectCar={setSelectedCar} />} />
+              <Route path="/favorites" element={<Favorites onSelectCar={setSelectedCar} />} />
+              <Route path="/login" element={<Login />} />
+              <Route path="/register" element={<Register />} />
+              <Route 
+                path="/profile" 
+                element={
+                  <ProtectedRoute>
+                    <UserProfile />
+                  </ProtectedRoute>
+                } 
+              />
+              <Route 
+                path="/garage" 
+                element={
+                  <ProtectedRoute>
+                    <Garage />
+                  </ProtectedRoute>
+                } 
+              />
+              <Route 
+                path="/sell" 
+                element={
+                  <ProtectedRoute>
+                    <SellCar />
+                  </ProtectedRoute>
+                } 
+              />
+              <Route path="/contact" element={<Contact />} />
+            </Routes>
+          </Suspense>
         </main>
         
         {/* Footer */}
@@ -79,13 +93,13 @@ export default function App() {
             </div>
             
             <div className="flex flex-wrap justify-center gap-8 md:gap-12 text-[9px] font-bold uppercase tracking-[0.4em] text-zinc-500">
-              <a href="#" className="hover:text-cyan-400 transition-colors">Privacy_Protocols</a>
-              <a href="#" className="hover:text-cyan-400 transition-colors">Digital_Terms</a>
-              <a href="#" className="hover:text-cyan-400 transition-colors">HQ_Contact</a>
+              <a href="#" className="hover:text-cyan-400 transition-colors">Privacy</a>
+              <a href="#" className="hover:text-cyan-400 transition-colors">Terms</a>
+              <a href="#" className="hover:text-cyan-400 transition-colors">Contact</a>
             </div>
             
             <p className="text-[9px] font-mono text-zinc-600 uppercase tracking-widest">
-              &copy; 2026 ZORA_JDM. VERSION 3.1.4
+              &copy; 2026 ZORA JDM
             </p>
           </div>
         </footer>

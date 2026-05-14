@@ -1,7 +1,8 @@
 import React, { useState, useEffect } from 'react';
 import { motion, AnimatePresence } from 'motion/react';
-import { Search, Menu, X, ChevronDown, LogOut, User } from 'lucide-react';
+import { Search, Menu, X, ChevronDown, LogOut, User, Heart } from 'lucide-react';
 import { Link, useLocation, useNavigate } from 'react-router-dom';
+import { useFavorites } from '../hooks/useFavorites';
 
 interface NavbarProps {
   onSelectCar: (car: any) => void;
@@ -18,6 +19,7 @@ export default function Navbar({ onSelectCar }: NavbarProps) {
   const [searchVin, setSearchVin] = useState('');
   const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false);
   const [isProfileDropdownOpen, setIsProfileDropdownOpen] = useState(false);
+  const { favoriteCount } = useFavorites();
   const [user, setUser] = useState<UserProfile>({
     name: 'Alex Racer',
     email: 'alex@zorajdm.com',
@@ -120,6 +122,11 @@ export default function Navbar({ onSelectCar }: NavbarProps) {
               location.pathname === link.path ? 'text-cyan-400' : 'text-zinc-500 group-hover:text-white'
             }`}>
               {link.name}
+              {link.name === 'Favorites' && favoriteCount > 0 && (
+                <span className="ml-1 px-1.5 py-0.5 bg-cyan-500 text-black text-[7px] font-black rounded">
+                  {favoriteCount}
+                </span>
+              )}
             </span>
             {location.pathname === link.path && (
               <motion.div 
@@ -209,7 +216,10 @@ export default function Navbar({ onSelectCar }: NavbarProps) {
           </div>
         ) : (
           <button 
-            onClick={() => navigate('/login')}
+            onClick={() => {
+              console.log('Sign In clicked, navigating to /login');
+              navigate('/login');
+            }}
             className="hidden sm:block px-6 py-2 border border-white/10 hover:border-cyan-400 hover:text-cyan-400 transition-all text-[10px] uppercase font-bold tracking-[0.2em] bg-white/5 whitespace-nowrap rounded"
           >
             Sign In
@@ -286,6 +296,7 @@ export default function Navbar({ onSelectCar }: NavbarProps) {
               ) : (
                 <button 
                   onClick={() => {
+                    console.log('Mobile Sign In clicked, navigating to /login');
                     navigate('/login');
                     setIsMobileMenuOpen(false);
                   }}

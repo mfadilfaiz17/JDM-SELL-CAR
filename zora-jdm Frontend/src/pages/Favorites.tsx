@@ -19,7 +19,8 @@ export default function Favorites({ onSelectCar }: FavoritesProps) {
   const favoriteCars = ALL_CARS.filter(car => favorites.includes(car.id));
 
   const formatIDR = (price: number) => {
-    const idr = price * 16300;
+    // price is in thousands (k), convert to actual USD then to IDR
+    const idr = price * 1000 * 16250; // 1 USD = Rp 16,250
     return new Intl.NumberFormat('id-ID', {
       style: 'currency',
       currency: 'IDR',
@@ -105,7 +106,7 @@ export default function Favorites({ onSelectCar }: FavoritesProps) {
                       transition={{ duration: 0.6, ease: "easeOut" }}
                       src={car.image} 
                       alt={car.famousName}
-                      className="w-full h-full object-cover filter grayscale group-hover:grayscale-0 transition-all duration-500 relative z-10"
+                      className="w-full h-full object-contain filter grayscale group-hover:grayscale-0 transition-all duration-500 relative z-10"
                       referrerPolicy="no-referrer"
                     />
                   ) : (
@@ -123,7 +124,7 @@ export default function Favorites({ onSelectCar }: FavoritesProps) {
                   {/* Primary Info */}
                   <div className="mt-auto pt-4 border-t border-white/5">
                     <div className="flex items-center justify-between mb-1">
-                      <span className="text-2xl font-black italic text-white group-hover:scale-105 transition-transform origin-left">${car.price}</span>
+                      <span className="text-2xl font-black italic text-white group-hover:scale-105 transition-transform origin-left">${car.price}k</span>
                       <div className="text-[9px] font-mono text-zinc-500 group-hover:text-red-500 transition-colors">
                         UNIT://{car.year}
                       </div>

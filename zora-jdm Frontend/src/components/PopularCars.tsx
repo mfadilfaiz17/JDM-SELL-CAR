@@ -20,7 +20,8 @@ export default function PopularCars({ onSelectCar }: PopularCarsProps) {
   );
 
   const formatIDR = (price: number) => {
-    const idr = price * 16300; // Approximate conversion rate
+    // price is in thousands (k), convert to actual USD then to IDR
+    const idr = price * 1000 * 16250; // 1 USD = Rp 16,250
     return new Intl.NumberFormat('id-ID', {
       style: 'currency',
       currency: 'IDR',
@@ -162,7 +163,7 @@ export default function PopularCars({ onSelectCar }: PopularCarsProps) {
                 <div>
                   <span className="block text-[8px] uppercase font-bold text-zinc-600 mb-1 font-mono">Daily Rate</span>
                   <div className="flex flex-col">
-                    <span className="text-3xl font-black italic tracking-tighter">${car.price}</span>
+                    <span className="text-3xl font-black italic tracking-tighter">${car.price}k</span>
                     <span className="text-[10px] font-mono text-zinc-500 uppercase tracking-tight">
                       {formatIDR(car.price)}
                     </span>

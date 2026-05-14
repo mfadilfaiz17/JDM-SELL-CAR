@@ -3,7 +3,6 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
-import { motion, AnimatePresence } from 'motion/react';
 import { Package, Lock, Edit, Trash2, Plus, Eye, EyeOff, AlertCircle, LogIn } from 'lucide-react';
 import React, { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
@@ -71,14 +70,10 @@ export default function Garage() {
     return (
       <div className="px-6 md:px-12 py-32 bg-[#050505] min-h-[80vh] flex flex-col items-center justify-center text-center relative overflow-hidden">
         <div className="absolute inset-0 grid-bg opacity-5 pointer-events-none" />
-        <motion.div
-          initial={{ opacity: 0 }}
-          animate={{ opacity: 1 }}
-          className="relative z-10"
-        >
+        <div className="relative z-10 animate-fadeIn">
           <div className="text-cyan-500 font-mono text-[10px] tracking-[0.4em] mb-4">[ LOADING ]</div>
           <div className="w-12 h-12 border-2 border-cyan-500/30 border-t-cyan-500 rounded-full animate-spin mx-auto"></div>
-        </motion.div>
+        </div>
       </div>
     );
   }
@@ -88,11 +83,7 @@ export default function Garage() {
       <div className="px-6 md:px-12 py-32 bg-[#050505] min-h-[80vh] flex flex-col items-center justify-center text-center relative overflow-hidden">
         <div className="absolute inset-0 grid-bg opacity-5 pointer-events-none" />
 
-        <motion.div
-          initial={{ opacity: 0, y: 20 }}
-          animate={{ opacity: 1, y: 0 }}
-          className="relative z-10 max-w-md"
-        >
+        <div className="relative z-10 max-w-md animate-fadeIn">
           <div className="w-24 h-24 mb-8 bg-zinc-900 border border-white/5 flex items-center justify-center relative mx-auto">
             <Package className="w-10 h-10 text-zinc-700" />
             <div className="absolute -top-2 -right-2">
@@ -133,7 +124,7 @@ export default function Garage() {
               </button>
             </div>
           </div>
-        </motion.div>
+        </div>
       </div>
     );
   }
@@ -182,11 +173,7 @@ export default function Garage() {
       <div className="px-6 md:px-12 py-32 bg-[#050505] min-h-[80vh] flex flex-col items-center justify-center text-center relative overflow-hidden">
         <div className="absolute inset-0 grid-bg opacity-5 pointer-events-none" />
 
-        <motion.div
-          initial={{ opacity: 0, y: 20 }}
-          animate={{ opacity: 1, y: 0 }}
-          className="relative z-10"
-        >
+        <div className="relative z-10 animate-fadeIn">
           <div className="text-cyan-500 font-mono text-[10px] tracking-[0.4em] mb-4">[ SECURE_STORAGE_ACCESS ]</div>
           <div className="w-24 h-24 mb-8 bg-zinc-900 border border-white/5 flex items-center justify-center relative mx-auto">
             <Package className="w-10 h-10 text-zinc-700" />
@@ -207,7 +194,7 @@ export default function Garage() {
           >
             Login to Access
           </button>
-        </motion.div>
+        </div>
       </div>
     );
   }
@@ -219,11 +206,7 @@ export default function Garage() {
 
       <div className="relative z-10 max-w-7xl mx-auto">
         {/* Header */}
-        <motion.div
-          initial={{ opacity: 0, y: 20 }}
-          animate={{ opacity: 1, y: 0 }}
-          className="mb-12"
-        >
+        <div className="mb-12 animate-fadeIn">
           <div className="flex items-center justify-between mb-6">
             <div>
               <div className="text-cyan-500 font-mono text-[10px] tracking-[0.4em] mb-2">[ PERSONAL_INVENTORY ]</div>
@@ -241,67 +224,40 @@ export default function Garage() {
 
           {/* Statistics */}
           <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
-            <motion.div
-              initial={{ opacity: 0, y: 10 }}
-              animate={{ opacity: 1, y: 0 }}
-              transition={{ delay: 0.1 }}
-              className="border border-white/5 bg-zinc-950/50 p-4 backdrop-blur"
-            >
+            <div className="border border-white/5 bg-zinc-950/50 p-4 backdrop-blur">
               <p className="text-[9px] font-mono text-zinc-600 uppercase tracking-[0.2em] mb-2">Total Listings</p>
               <p className="text-3xl font-black text-cyan-500">{userListings.length}</p>
-            </motion.div>
+            </div>
 
-            <motion.div
-              initial={{ opacity: 0, y: 10 }}
-              animate={{ opacity: 1, y: 0 }}
-              transition={{ delay: 0.2 }}
-              className="border border-white/5 bg-zinc-950/50 p-4 backdrop-blur"
-            >
+            <div className="border border-white/5 bg-zinc-950/50 p-4 backdrop-blur">
               <p className="text-[9px] font-mono text-zinc-600 uppercase tracking-[0.2em] mb-2">Active</p>
               <p className="text-3xl font-black text-green-500">{activeListing}</p>
-            </motion.div>
+            </div>
 
-            <motion.div
-              initial={{ opacity: 0, y: 10 }}
-              animate={{ opacity: 1, y: 0 }}
-              transition={{ delay: 0.3 }}
-              className="border border-white/5 bg-zinc-950/50 p-4 backdrop-blur"
-            >
+            <div className="border border-white/5 bg-zinc-950/50 p-4 backdrop-blur">
               <p className="text-[9px] font-mono text-zinc-600 uppercase tracking-[0.2em] mb-2">Inactive</p>
               <p className="text-3xl font-black text-amber-500">{inactiveListing}</p>
-            </motion.div>
+            </div>
 
-            <motion.div
-              initial={{ opacity: 0, y: 10 }}
-              animate={{ opacity: 1, y: 0 }}
-              transition={{ delay: 0.4 }}
-              className="border border-white/5 bg-zinc-950/50 p-4 backdrop-blur"
-            >
+            <div className="border border-white/5 bg-zinc-950/50 p-4 backdrop-blur">
               <p className="text-[9px] font-mono text-zinc-600 uppercase tracking-[0.2em] mb-2">Total Views</p>
               <p className="text-3xl font-black text-purple-500">{totalViews}</p>
-            </motion.div>
+            </div>
           </div>
-        </motion.div>
+        </div>
 
         {/* Add New Listing Button */}
-        <motion.button
-          initial={{ opacity: 0, y: 20 }}
-          animate={{ opacity: 1, y: 0 }}
-          transition={{ delay: 0.5 }}
+        <button
           onClick={() => navigate('/sell')}
           className="mb-8 w-full md:w-auto px-8 py-4 bg-cyan-500 text-black font-black uppercase text-xs tracking-[0.3em] flex items-center justify-center gap-2 hover:bg-white transition-all"
         >
           <Plus className="w-4 h-4" />
           Add New Listing
-        </motion.button>
+        </button>
 
         {/* Listings */}
         {userListings.length === 0 ? (
-          <motion.div
-            initial={{ opacity: 0 }}
-            animate={{ opacity: 1 }}
-            className="py-24 text-center border border-white/5 bg-zinc-950/50"
-          >
+          <div className="py-24 text-center border border-white/5 bg-zinc-950/50 animate-fadeIn">
             <Package className="w-16 h-16 mx-auto text-zinc-800 mb-4" />
             <div className="text-zinc-600 font-mono text-[10px] tracking-[0.5em] mb-4">NO_LISTINGS_FOUND</div>
             <div className="text-2xl font-black italic text-zinc-800 uppercase mb-8">Your Garage is Empty</div>
@@ -311,16 +267,14 @@ export default function Garage() {
             >
               Create Your First Listing
             </button>
-          </motion.div>
+          </div>
         ) : (
           <div className="space-y-6">
             {userListings.map((listing, index) => (
-              <motion.div
+              <div
                 key={listing.id}
-                initial={{ opacity: 0, y: 20 }}
-                animate={{ opacity: 1, y: 0 }}
-                transition={{ delay: 0.1 * (index + 1) }}
-                className="border border-white/5 bg-zinc-950/50 p-6 backdrop-blur hover:border-cyan-500/30 transition-all"
+                className="border border-white/5 bg-zinc-950/50 p-6 backdrop-blur hover:border-cyan-500/30 transition-all animate-fadeIn"
+                style={{ animationDelay: `${index * 0.1}s` }}
               >
                 <div className="grid grid-cols-1 md:grid-cols-4 gap-6">
                   {/* Image */}
@@ -330,7 +284,7 @@ export default function Garage() {
                         <img
                           src={listing.image}
                           alt={listing.famousName}
-                          className="w-full h-full object-cover filter grayscale group-hover:grayscale-0 transition-all duration-300"
+                          className="w-full h-full object-contain filter grayscale group-hover:grayscale-0 transition-all duration-300"
                           referrerPolicy="no-referrer"
                         />
                       ) : (
@@ -418,14 +372,8 @@ export default function Garage() {
                 </div>
 
                 {/* Delete Confirmation */}
-                <AnimatePresence>
-                  {deleteConfirm === listing.id && (
-                    <motion.div
-                      initial={{ opacity: 0, height: 0 }}
-                      animate={{ opacity: 1, height: 'auto' }}
-                      exit={{ opacity: 0, height: 0 }}
-                      className="mt-4 pt-4 border-t border-red-500/30 bg-red-500/10 p-4"
-                    >
+                {deleteConfirm === listing.id && (
+                  <div className="mt-4 pt-4 border-t border-red-500/30 bg-red-500/10 p-4 animate-fadeIn">
                       <div className="flex items-center gap-3 mb-4">
                         <AlertCircle className="w-4 h-4 text-red-500 shrink-0" />
                         <p className="text-red-400 text-sm">Are you sure you want to delete this listing?</p>
@@ -444,32 +392,24 @@ export default function Garage() {
                           Cancel
                         </button>
                       </div>
-                    </motion.div>
+                    </div>
                   )}
-                </AnimatePresence>
-              </motion.div>
+              </div>
             ))}
           </div>
         )}
       </div>
 
       {/* Edit Modal */}
-      <AnimatePresence>
-        {isEditModalOpen && selectedListing && (
-          <motion.div
-            initial={{ opacity: 0 }}
-            animate={{ opacity: 1 }}
-            exit={{ opacity: 0 }}
-            className="fixed inset-0 bg-black/80 z-50 flex items-center justify-center p-4"
-            onClick={() => setIsEditModalOpen(false)}
+      {isEditModalOpen && selectedListing && (
+        <div
+          className="fixed inset-0 bg-black/80 z-50 flex items-center justify-center p-4 animate-fadeIn"
+          onClick={() => setIsEditModalOpen(false)}
+        >
+          <div
+            onClick={(e) => e.stopPropagation()}
+            className="bg-zinc-950 border border-white/5 p-8 max-w-2xl w-full max-h-[90vh] overflow-y-auto animate-scaleIn"
           >
-            <motion.div
-              initial={{ opacity: 0, scale: 0.9 }}
-              animate={{ opacity: 1, scale: 1 }}
-              exit={{ opacity: 0, scale: 0.9 }}
-              onClick={(e) => e.stopPropagation()}
-              className="bg-zinc-950 border border-white/5 p-8 max-w-2xl w-full max-h-[90vh] overflow-y-auto"
-            >
               <h2 className="text-2xl font-black italic text-cyan-500 uppercase tracking-tighter mb-6">
                 Edit Listing
               </h2>
@@ -526,10 +466,9 @@ export default function Garage() {
                   Cancel
                 </button>
               </div>
-            </motion.div>
-          </motion.div>
+            </div>
+          </div>
         )}
-      </AnimatePresence>
     </div>
   );
 }
