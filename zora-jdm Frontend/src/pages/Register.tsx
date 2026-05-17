@@ -7,6 +7,7 @@ import { motion } from 'motion/react';
 import { Mail, Lock, User, ArrowRight } from 'lucide-react';
 import React, { useState } from 'react';
 import { useNavigate, Link } from 'react-router-dom';
+import { apiClient } from '../api/client';
 
 export default function Register() {
   const [name, setName] = useState('');
@@ -39,18 +40,8 @@ export default function Register() {
     setIsLoading(true);
 
     try {
-      const response = await fetch('http://localhost:5001/api/auth/register', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ name, email, password, role })
-      });
-
-      const data = await response.json();
-
-      if (!response.ok) {
-        setError(data.error || 'Registration failed');
-        return;
-      }
+      // Use API client
+      const data: any = await apiClient.auth.register(name, email, password, role);
 
       // Store token
       localStorage.setItem('authToken', data.token);
@@ -75,7 +66,7 @@ export default function Register() {
         className="relative z-10 w-full max-w-md"
       >
         <div className="border border-white/5 bg-zinc-950/50 p-8 backdrop-blur">
-          <div className="text-cyan-500 font-mono text-[10px] tracking-[0.4em] mb-6">[ AUTH_PROTOCOL ]</div>
+          <div className="text-cyan-500 font-mono text-[10px] tracking-[0.4em] mb-6">[ AUTH PROTOCOL ]</div>
           <h1 className="text-4xl font-black italic text-white uppercase tracking-tighter mb-2">
             Create Account
           </h1>

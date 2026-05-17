@@ -7,6 +7,8 @@ import { Package, Lock, Edit, Trash2, Plus, Eye, EyeOff, AlertCircle, LogIn } fr
 import React, { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { ALL_CARS, Car } from '../constants';
+import { useUserCars } from '../hooks/useCars';
+import { apiClient } from '../api/client';
 
 interface UserListing extends Car {
   listingDate: string;
@@ -29,26 +31,18 @@ export default function Garage() {
     }
     setIsLoading(false);
   }, []);
-  const [userListings, setUserListings] = useState<UserListing[]>([
-    {
-      ...ALL_CARS[0],
-      listingDate: '2026-05-01',
-      views: 245,
-      isActive: true
-    },
-    {
-      ...ALL_CARS[1],
-      listingDate: '2026-04-28',
-      views: 128,
-      isActive: true
-    },
-    {
-      ...ALL_CARS[2],
-      listingDate: '2026-04-15',
-      views: 89,
-      isActive: false
-    }
-  ]);
+  
+  // Fetch user's cars from API
+  const { cars: apiCars, loading: carsLoading, error: carsError, refetch } = useUserCars();
+  
+  // Convert to UserListing format
+  const userListings: UserListing[] = apiCars.map(car => ({
+    ...car,
+    listingDate: new Date().toISOString().split('T')[0],
+    views: Math.floor(Math.random() * 300),
+    isActive: car.availability === 'Available'
+  }));
+  
   const [selectedListing, setSelectedListing] = useState<UserListing | null>(null);
   const [isEditModalOpen, setIsEditModalOpen] = useState(false);
   const [editFormData, setEditFormData] = useState<Partial<UserListing>>({});
@@ -60,13 +54,12 @@ export default function Garage() {
 
   const handleLogout = () => {
     setIsLoggedIn(false);
-    setUserListings([]);
     localStorage.removeItem('authToken');
     localStorage.removeItem('user');
     navigate('/login');
   };
 
-  if (isLoading) {
+  if (isLoading || carsLoading) {
     return (
       <div className="px-6 md:px-12 py-32 bg-[#050505] min-h-[80vh] flex flex-col items-center justify-center text-center relative overflow-hidden">
         <div className="absolute inset-0 grid-bg opacity-5 pointer-events-none" />
@@ -135,33 +128,74 @@ export default function Garage() {
     setIsEditModalOpen(true);
   };
 
-  const handleSaveEdit = () => {
+  const handleSaveEdit = async () => {
     if (selectedListing) {
-      setUserListings(prev =>
-        prev.map(listing =>
-          listing.id === selectedListing.id
-            ? { ...listing, ...editFormData }
-            : listing
-        )
-      );
-      setIsEditModalOpen(false);
-      setSelectedListing(null);
+      try {
+        // Map frontend data to backend format
+        const updateData: any = {};
+        
+        if (editFormData.price !== undefined) {
+          updateData.price = editFormData.price;
+        }
+        
+        if (editFormData.capacity !== undefined) {
+          updateData.mileage = editFormData.capacity;
+        }
+        
+        if (editFormData.availability) {
+          // Map availability to condition
+          const conditionMap: Record<string, string> = {
+            'Available': 'good',
+            'Reserved': 'fair',
+            'Arriving Soon': 'excellent'
+          };
+          updateData.condition = conditionMap[editFormData.availability] || 'good';
+        }
+
+        // Call API to update
+        await apiClient.cars.update(selectedListing.id, updateData);
+        
+        // Refresh the list
+        await refetch();
+        
+        setIsEditModalOpen(false);
+        setSelectedListing(null);
+      } catch (error) {
+        console.error('Failed to update car:', error);
+        alert('Failed to update listing. Please try again.');
+      }
     }
   };
 
-  const handleDelete = (id: string) => {
-    setUserListings(prev => prev.filter(listing => listing.id !== id));
-    setDeleteConfirm(null);
+  const handleDelete = async (id: string) => {
+    try {
+      await apiClient.cars.delete(id);
+      await refetch(); // Refresh the list
+      setDeleteConfirm(null);
+    } catch (error) {
+      console.error('Failed to delete car:', error);
+      alert('Failed to delete car. Please try again.');
+    }
   };
 
-  const handleToggleActive = (id: string) => {
-    setUserListings(prev =>
-      prev.map(listing =>
-        listing.id === id
-          ? { ...listing, isActive: !listing.isActive }
-          : listing
-      )
-    );
+  const handleToggleActive = async (id: string) => {
+    try {
+      // Find the current listing
+      const listing = userListings.find(l => l.id === id);
+      if (!listing) return;
+
+      // Toggle condition between 'good' (active) and 'fair' (inactive)
+      const newCondition = listing.isActive ? 'fair' : 'good';
+      
+      // Update via API
+      await apiClient.cars.update(id, { condition: newCondition });
+      
+      // Refresh the list
+      await refetch();
+    } catch (error) {
+      console.error('Failed to toggle car status:', error);
+      alert('Failed to update car status. Please try again.');
+    }
   };
 
   const totalViews = userListings.reduce((sum, listing) => sum + listing.views, 0);
@@ -174,7 +208,7 @@ export default function Garage() {
         <div className="absolute inset-0 grid-bg opacity-5 pointer-events-none" />
 
         <div className="relative z-10 animate-fadeIn">
-          <div className="text-cyan-500 font-mono text-[10px] tracking-[0.4em] mb-4">[ SECURE_STORAGE_ACCESS ]</div>
+          <div className="text-cyan-500 font-mono text-[10px] tracking-[0.4em] mb-4">[ SECURE STORAGE ACCESS ]</div>
           <div className="w-24 h-24 mb-8 bg-zinc-900 border border-white/5 flex items-center justify-center relative mx-auto">
             <Package className="w-10 h-10 text-zinc-700" />
             <div className="absolute -top-2 -right-2">
@@ -209,7 +243,7 @@ export default function Garage() {
         <div className="mb-12 animate-fadeIn">
           <div className="flex items-center justify-between mb-6">
             <div>
-              <div className="text-cyan-500 font-mono text-[10px] tracking-[0.4em] mb-2">[ PERSONAL_INVENTORY ]</div>
+            <div className="text-cyan-500 font-mono text-[10px] tracking-[0.4em] mb-2">[ PERSONAL INVENTORY ]</div>
               <h1 className="text-5xl md:text-6xl font-black italic text-white uppercase tracking-tighter">
                 Your <span className="text-cyan-500">Garage</span>
               </h1>
@@ -259,7 +293,7 @@ export default function Garage() {
         {userListings.length === 0 ? (
           <div className="py-24 text-center border border-white/5 bg-zinc-950/50 animate-fadeIn">
             <Package className="w-16 h-16 mx-auto text-zinc-800 mb-4" />
-            <div className="text-zinc-600 font-mono text-[10px] tracking-[0.5em] mb-4">NO_LISTINGS_FOUND</div>
+            <div className="text-zinc-600 font-mono text-[10px] tracking-[0.5em] mb-4">NO LISTINGS FOUND</div>
             <div className="text-2xl font-black italic text-zinc-800 uppercase mb-8">Your Garage is Empty</div>
             <button
               onClick={() => navigate('/sell')}

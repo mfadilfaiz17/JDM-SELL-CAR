@@ -7,6 +7,7 @@ import { motion } from 'motion/react';
 import { User, Mail, Phone, MapPin, Edit2, Save, X, Camera } from 'lucide-react';
 import React, { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
+import { apiClient } from '../api/client';
 
 interface UserData {
   name: string;
@@ -36,38 +37,71 @@ export default function UserProfile() {
   const navigate = useNavigate();
 
   useEffect(() => {
-    // Load user from localStorage
+    // Load user from API
     const token = localStorage.getItem('authToken');
-    const userData = localStorage.getItem('user');
 
     if (!token) {
       navigate('/login');
       return;
     }
 
-    if (userData) {
+    // Fetch user profile from API
+    const fetchProfile = async () => {
       try {
-        const parsed = JSON.parse(userData);
+        const response: any = await apiClient.auth.getProfile();
+        const userData = response.user;
+        
         const userProfile: UserData = {
-          name: parsed.name || 'User',
-          email: parsed.email || '',
-          phone: parsed.phone || '',
-          location: parsed.location || '',
-          bio: parsed.bio || '',
-          role: parsed.role || 'buyer',
-          profileImage: parsed.profileImage || '',
-          joinDate: parsed.joinDate || new Date().toLocaleDateString(),
-          totalListings: parsed.totalListings || 0,
-          totalPurchases: parsed.totalPurchases || 0,
-          rating: parsed.rating || 0,
-          reviews: parsed.reviews || 0,
+          name: userData.name || 'User',
+          email: userData.email || '',
+          phone: userData.phone || '',
+          location: userData.address || '',
+          bio: userData.bio || '',
+          role: userData.role || 'buyer',
+          profileImage: userData.profileImage || '',
+          joinDate: new Date(userData.createdAt || Date.now()).toLocaleDateString(),
+          totalListings: userData.totalListings || 0,
+          totalPurchases: userData.totalPurchases || 0,
+          rating: userData.rating || 0,
+          reviews: userData.reviews || 0,
         };
+        
         setUser(userProfile);
         setFormData(userProfile);
+        
+        // Update localStorage with fresh data
+        localStorage.setItem('user', JSON.stringify({ ...userData, id: userData.id }));
       } catch (error) {
-        console.error('Failed to parse user data:', error);
+        console.error('Failed to fetch profile:', error);
+        // Fallback to localStorage if API fails
+        const userData = localStorage.getItem('user');
+        if (userData) {
+          try {
+            const parsed = JSON.parse(userData);
+            const userProfile: UserData = {
+              name: parsed.name || 'User',
+              email: parsed.email || '',
+              phone: parsed.phone || '',
+              location: parsed.location || '',
+              bio: parsed.bio || '',
+              role: parsed.role || 'buyer',
+              profileImage: parsed.profileImage || '',
+              joinDate: parsed.joinDate || new Date().toLocaleDateString(),
+              totalListings: parsed.totalListings || 0,
+              totalPurchases: parsed.totalPurchases || 0,
+              rating: parsed.rating || 0,
+              reviews: parsed.reviews || 0,
+            };
+            setUser(userProfile);
+            setFormData(userProfile);
+          } catch (parseError) {
+            console.error('Failed to parse user data:', parseError);
+          }
+        }
       }
-    }
+    };
+
+    fetchProfile();
   }, [navigate]);
 
   const handleInputChange = (e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement | HTMLSelectElement>) => {
@@ -82,9 +116,32 @@ export default function UserProfile() {
     setSuccess('');
 
     try {
+      // Call API to update profile
+      const response: any = await apiClient.auth.updateProfile({
+        name: formData.name,
+        phone: formData.phone,
+        address: formData.location,
+        profileImage: formData.profileImage
+      });
+
+      // Update local state with response
+      const updatedUser = {
+        ...formData,
+        location: response.user.address || formData.location
+      };
+      
+      setUser(updatedUser);
+      
       // Update localStorage
-      localStorage.setItem('user', JSON.stringify(formData));
-      setUser(formData);
+      const currentUser = JSON.parse(localStorage.getItem('user') || '{}');
+      localStorage.setItem('user', JSON.stringify({
+        ...currentUser,
+        name: response.user.name,
+        phone: response.user.phone,
+        address: response.user.address,
+        profileImage: response.user.profileImage
+      }));
+      
       setIsEditing(false);
       setSuccess('Profile updated successfully!');
       setTimeout(() => setSuccess(''), 3000);
@@ -108,8 +165,9 @@ export default function UserProfile() {
     }
 
     try {
-      // In a real app, this would call the backend API
-      // For now, just show success
+      // Call API to change password
+      await apiClient.auth.changePassword(oldPassword, newPassword);
+      
       setSuccess('Password changed successfully!');
       setOldPassword('');
       setNewPassword('');
@@ -124,7 +182,7 @@ export default function UserProfile() {
   if (!user) {
     return (
       <div className="px-6 md:px-12 py-24 bg-[#050505] min-h-screen flex items-center justify-center">
-        <div className="text-zinc-600 font-mono text-[10px] tracking-[0.5em]">LOADING_PROFILE...</div>
+        <div className="text-zinc-600 font-mono text-[10px] tracking-[0.5em]">LOADING PROFILE...</div>
       </div>
     );
   }
@@ -137,7 +195,7 @@ export default function UserProfile() {
       <div className="relative z-10 max-w-4xl mx-auto">
         {/* Header */}
         <div className="mb-12">
-          <div className="text-cyan-500 font-mono text-[10px] tracking-[0.4em] mb-2">[ USER_PROFILE_SYSTEM ]</div>
+          <div className="text-cyan-500 font-mono text-[10px] tracking-[0.4em] mb-2">[ USER PROFILE SYSTEM ]</div>
           <h1 className="text-5xl md:text-6xl font-black italic text-white uppercase tracking-tighter mb-8">
             My <span className="text-cyan-500">Profile</span>
           </h1>

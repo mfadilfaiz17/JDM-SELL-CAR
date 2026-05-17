@@ -7,6 +7,7 @@ import { motion } from 'motion/react';
 import { Upload, ChevronRight, X, AlertCircle } from 'lucide-react';
 import React, { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
+import { apiClient } from '../api/client';
 
 interface FormData {
   brand: string;
@@ -131,8 +132,57 @@ export default function SellCar() {
     setIsSubmitting(true);
 
     try {
-      // Simulate API call
-      await new Promise(resolve => setTimeout(resolve, 1500));
+      // Get current user
+      const user = JSON.parse(localStorage.getItem('user') || '{}');
+      
+      if (!user.id) {
+        setErrors(prev => ({
+          ...prev,
+          submit: 'You must be logged in to sell a car'
+        }));
+        setIsSubmitting(false);
+        return;
+      }
+
+      // Upload images first
+      const uploadedImageUrls: string[] = [];
+      for (const imageFile of formData.images) {
+        try {
+          // Convert image to base64
+          const base64 = await new Promise<string>((resolve, reject) => {
+            const reader = new FileReader();
+            reader.onload = () => resolve(reader.result as string);
+            reader.onerror = reject;
+            reader.readAsDataURL(imageFile);
+          });
+
+          // Upload to backend
+          const uploadResult: any = await apiClient.upload.image(base64, imageFile.name);
+          uploadedImageUrls.push(uploadResult.url);
+        } catch (uploadError) {
+          console.error('Failed to upload image:', uploadError);
+          // Continue with other images even if one fails
+        }
+      }
+
+      // Map frontend form data to backend format
+      const carData = {
+        brand: formData.brand,
+        model: formData.model,
+        year: formData.year,
+        price: formData.price,
+        mileage: formData.mileage,
+        condition: formData.condition.toLowerCase() as 'excellent' | 'good' | 'fair',
+        fuelType: formData.fuelType.toLowerCase() as 'petrol' | 'diesel' | 'hybrid' | 'electric',
+        transmission: formData.transmission.toLowerCase() as 'manual' | 'automatic',
+        color: formData.color,
+        description: `${formData.engine} - ${formData.description}`,
+        images: uploadedImageUrls,
+        seller: user.id
+      };
+
+      // Submit to API
+      await apiClient.cars.create(carData);
 
       // Show success message
       setSubmitSuccess(true);
@@ -144,10 +194,10 @@ export default function SellCar() {
       setTimeout(() => {
         navigate('/garage');
       }, 2000);
-    } catch (error) {
+    } catch (error: any) {
       setErrors(prev => ({
         ...prev,
-        submit: 'Failed to submit listing. Please try again.'
+        submit: error.message || 'Failed to submit listing. Please try again.'
       }));
     } finally {
       setIsSubmitting(false);
@@ -193,7 +243,7 @@ export default function SellCar() {
       <div className="absolute inset-0 grid-bg opacity-5 pointer-events-none" />
 
       <div className="relative z-10 max-w-5xl mx-auto">
-        <div className="text-cyan-500 font-mono text-[10px] tracking-[0.4em] mb-4">[ DATA_UPLOADING_PROTOCOL ]</div>
+        <div className="text-cyan-500 font-mono text-[10px] tracking-[0.4em] mb-4">[ DATA UPLOADING PROTOCOL ]</div>
         <h1 className="text-5xl md:text-6xl font-black italic text-white uppercase tracking-tighter mb-2 leading-none">
           List Your <span className="text-cyan-500">Specimen</span>
         </h1>

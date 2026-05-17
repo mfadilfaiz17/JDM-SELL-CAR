@@ -41,7 +41,7 @@ export default function ComparisonModal({ isOpen, onClose, cars }: ComparisonMod
           {/* Header */}
           <div className="flex justify-between items-center p-6 border-b border-white/5 bg-zinc-900/50">
             <div>
-              <div className="text-cyan-500 font-mono text-[10px] tracking-[0.4em] mb-1">[ UNIT_COMPARISON_MATRIX ]</div>
+              <div className="text-cyan-500 font-mono text-[10px] tracking-[0.4em] mb-1">[ UNIT COMPARISON MATRIX ]</div>
               <h2 className="text-2xl font-black italic text-white uppercase tracking-tighter">Spec Analysis</h2>
             </div>
             <button

@@ -7,6 +7,7 @@ import { motion } from 'motion/react';
 import { Mail, Lock, ArrowRight } from 'lucide-react';
 import React, { useState } from 'react';
 import { useNavigate, Link } from 'react-router-dom';
+import { apiClient } from '../api/client';
 
 export default function Login() {
   const [email, setEmail] = useState('');
@@ -21,19 +22,8 @@ export default function Login() {
     setIsLoading(true);
 
     try {
-      // Real API call
-      const response = await fetch('http://localhost:5001/api/auth/login', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ email, password })
-      });
-
-      const data = await response.json();
-
-      if (!response.ok) {
-        setError(data.error || 'Login failed');
-        return;
-      }
+      // Use API client
+      const data: any = await apiClient.auth.login(email, password);
 
       // Store token
       localStorage.setItem('authToken', data.token);
@@ -58,7 +48,7 @@ export default function Login() {
         className="relative z-10 w-full max-w-md"
       >
         <div className="border border-white/5 bg-zinc-950/50 p-8 backdrop-blur">
-          <div className="text-cyan-500 font-mono text-[10px] tracking-[0.4em] mb-6">[ AUTH_PROTOCOL ]</div>
+          <div className="text-cyan-500 font-mono text-[10px] tracking-[0.4em] mb-6">[ AUTH PROTOCOL ]</div>
           <h1 className="text-4xl font-black italic text-white uppercase tracking-tighter mb-2">
             Sign In
           </h1>

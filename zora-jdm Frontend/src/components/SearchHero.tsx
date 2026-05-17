@@ -20,15 +20,15 @@ export default function SearchHero() {
 
       {/* Decorative background text */}
       <div className="absolute top-1/2 left-0 -translate-y-1/2 opacity-[0.02] select-none pointer-events-none">
-        <h1 className="text-[30vw] md:text-[20vw] font-black italic leading-none tracking-tighter whitespace-nowrap">PREMIUM_UNIT</h1>
+        <h1 className="text-[30vw] md:text-[20vw] font-black italic leading-none tracking-tighter whitespace-nowrap">PREMIUM UNIT</h1>
       </div>
 
       {/* Floating HUD Elements */}
       <div className="absolute top-20 right-20 hidden lg:block opacity-20 animate-pulse">
         <div className="flex flex-col gap-2 font-mono text-[8px] text-cyan-500">
-          <div className="flex justify-between w-40 border-b border-cyan-500/30 pb-1"><span>COORD_X</span><span>40.3948</span></div>
-          <div className="flex justify-between w-40 border-b border-cyan-500/30 pb-1"><span>COORD_Y</span><span>139.2938</span></div>
-          <div className="flex justify-between w-40 border-b border-cyan-500/30 pb-1"><span>LINK_STAT</span><span>ONLINE</span></div>
+          <div className="flex justify-between w-40 border-b border-cyan-500/30 pb-1"><span>COORD X</span><span>40.3948</span></div>
+          <div className="flex justify-between w-40 border-b border-cyan-500/30 pb-1"><span>COORD Y</span><span>139.2938</span></div>
+          <div className="flex justify-between w-40 border-b border-cyan-500/30 pb-1"><span>LINK STAT</span><span>ONLINE</span></div>
         </div>
       </div>
 
@@ -40,7 +40,7 @@ export default function SearchHero() {
       >
         <div className="flex items-center gap-4 mb-6">
           <div className="px-4 py-1 bg-cyan-500/10 border-l border-cyan-500 font-mono text-[10px] text-cyan-400 tracking-widest">
-            [ SCANNING_INVENTORY_SYSTEM ]
+            [ SCANNING INVENTORY SYSTEM ]
           </div>
           <div className="h-px bg-white/5 flex-grow" />
         </div>
@@ -72,7 +72,7 @@ export default function SearchHero() {
 
           {/* Location */}
           <div className="p-4 md:p-6 bg-zinc-950/80 hover:bg-zinc-900 transition-colors cursor-pointer group relative overflow-hidden backdrop-blur-sm">
-            <span className="block text-[8px] font-bold text-zinc-600 uppercase tracking-widest mb-2 font-mono">03. HUD_LOC</span>
+            <span className="block text-[8px] font-bold text-zinc-600 uppercase tracking-widest mb-2 font-mono">03. HUD LOC</span>
             <div className="flex items-center gap-2">
               <span className="text-sm font-black italic uppercase group-hover:text-cyan-400 transition-colors">Tokyo Bay</span>
             </div>
@@ -85,7 +85,7 @@ export default function SearchHero() {
             className="w-full h-full px-8 py-6 bg-cyan-500/5 hover:bg-cyan-500 text-cyan-500 hover:text-black flex items-center justify-center gap-3 font-black italic uppercase text-[10px] tracking-[0.3em] transition-all duration-300 group"
           >
             <Search className="w-4 h-4 group-hover:scale-110 transition-transform" />
-            <span>Engage_Sys</span>
+            <span>Engage Sys</span>
           </button>
         </div>
       </motion.div>

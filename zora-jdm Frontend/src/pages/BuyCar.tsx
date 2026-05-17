@@ -10,6 +10,8 @@ import { useSearchParams } from 'react-router-dom';
 import ComparisonModal from '../components/ComparisonModal';
 import { useFavorites } from '../hooks/useFavorites';
 import { usePagination } from '../hooks/usePagination';
+import { generateWhatsAppUrl } from '../config/contact';
+import { useCars } from '../hooks/useCars';
 
 interface InventoryProps {
   onSelectCar: (car: Car) => void;
@@ -32,9 +34,13 @@ export default function BuyCar({ onSelectCar }: InventoryProps) {
   const [maxPrice, setMaxPrice] = useState<number>(2000);
   const [showFilters, setShowFilters] = useState(false);
   const { isFavorite, toggleFavorite } = useFavorites();
+  
+  // Fetch cars from API with fallback to constants
+  const { cars: apiCars, loading, error } = useCars();
+  const allCars = apiCars.length > 0 ? apiCars : ALL_CARS;
 
   // Filter cars based on all criteria
-  const filteredCars = ALL_CARS.filter(car => {
+  const filteredCars = allCars.filter(car => {
     const matchesSearch = 
       car.famousName.toLowerCase().includes(filter.toLowerCase()) || 
       car.modelDetail.toLowerCase().includes(filter.toLowerCase()) || 
@@ -87,12 +93,12 @@ export default function BuyCar({ onSelectCar }: InventoryProps) {
   };
 
   // Get unique brands for filter dropdown
-  const uniqueBrands = Array.from(new Set(ALL_CARS.map(car => car.brand))).sort();
+  const uniqueBrands = Array.from(new Set(allCars.map(car => car.brand))).sort();
   
   // Get unique models for selected brand
   const uniqueModels = selectedBrand === 'ALL' 
-    ? Array.from(new Set(ALL_CARS.map(car => car.modelDetail))).sort()
-    : Array.from(new Set(ALL_CARS.filter(car => car.brand === selectedBrand).map(car => car.modelDetail))).sort();
+    ? Array.from(new Set(allCars.map(car => car.modelDetail))).sort()
+    : Array.from(new Set(allCars.filter(car => car.brand === selectedBrand).map(car => car.modelDetail))).sort();
 
   // Get unique conditions (based on availability)
   const conditions = ['ALL', 'Available', 'Reserved', 'Sold'];
@@ -100,8 +106,8 @@ export default function BuyCar({ onSelectCar }: InventoryProps) {
   // Get unique fuel types (from engine data)
   const fuelTypes = ['ALL', 'Petrol', 'Diesel', 'Hybrid', 'Electric'];
 
-  const modifiedCars = pagination.currentItems.filter(c => c.category === 'Modified');
-  const standardCars = pagination.currentItems.filter(c => c.category === 'Standard');
+  const modifiedCars = pagination.currentItems.filter((c: Car) => c.category === 'Modified');
+  const standardCars = pagination.currentItems.filter((c: Car) => c.category === 'Standard');
 
   const toggleCompare = (e: React.MouseEvent, car: Car) => {
     e.stopPropagation();
@@ -130,7 +136,7 @@ export default function BuyCar({ onSelectCar }: InventoryProps) {
           <div className="w-16 h-16 mx-auto mb-6 bg-zinc-900 border border-white/5 flex items-center justify-center">
             <Search className="w-8 h-8 text-zinc-700" />
           </div>
-          <div className="text-zinc-600 font-mono text-[10px] tracking-[0.5em] mb-4">NO_RESULTS_FOUND</div>
+          <div className="text-zinc-600 font-mono text-[10px] tracking-[0.5em] mb-4">NO RESULTS FOUND</div>
           <div className="text-2xl font-black italic text-zinc-800 uppercase mb-8">No Cars Match Your Criteria</div>
           <button
             onClick={() => {
@@ -167,7 +173,7 @@ export default function BuyCar({ onSelectCar }: InventoryProps) {
             
             <div className="flex justify-between items-start mb-6">
               <div className="flex flex-col gap-1">
-                <div className="text-[8px] font-mono text-zinc-800 tracking-tighter">DATA_REF_0{index + 1}</div>
+                <div className="text-[8px] font-mono text-zinc-800 tracking-tighter">DATA REF 0{index + 1}</div>
                 <div className={`text-[7px] font-mono px-1 w-fit border ${
                   car.category === 'Modified' ? 'border-purple-500/50 text-purple-500/70' : 'border-zinc-700 text-zinc-600'
                 }`}>
@@ -209,7 +215,7 @@ export default function BuyCar({ onSelectCar }: InventoryProps) {
                     />
                   ) : (
                     <div className="w-full h-full flex items-center justify-center border border-white/5 bg-white/5">
-                      <span className="text-[10px] font-mono text-zinc-800 uppercase tracking-widest">No_Image_Data</span>
+                      <span className="text-[10px] font-mono text-zinc-800 uppercase tracking-widest">No Image Data</span>
                     </div>
                   )}
             </div>
@@ -232,7 +238,7 @@ export default function BuyCar({ onSelectCar }: InventoryProps) {
                           : 'border-white/10 text-zinc-600 hover:border-cyan-500/30 hover:text-cyan-500'
                       }`}
                     >
-                      {compareList.find(c => c.id === car.id) ? '[ COMPARE_ON ]' : '[ ADD_TO_CMP ]'}
+                      {compareList.find(c => c.id === car.id) ? '[ COMPARE ON ]' : '[ ADD TO CMP ]'}
                     </button>
                     <div className="text-[9px] font-mono text-zinc-500 group-hover:text-cyan-500 transition-colors">
                       UNIT://{car.year}
@@ -254,7 +260,7 @@ export default function BuyCar({ onSelectCar }: InventoryProps) {
                     </div>
                     <div className="space-y-1">
                       <span className="block text-[7px] font-mono text-zinc-600 uppercase tracking-[0.2em]">Efficiency</span>
-                      <span className="block text-[9px] font-mono text-zinc-300 uppercase">{car.efficiency || 'HIGH_PERF'}</span>
+                      <span className="block text-[9px] font-mono text-zinc-300 uppercase">{car.efficiency || 'HIGH PERF'}</span>
                     </div>
                   </div>
 
@@ -279,10 +285,20 @@ export default function BuyCar({ onSelectCar }: InventoryProps) {
                     </div>
                   </div>
 
-                  <button className="w-full py-3 bg-cyan-500 text-black text-[10px] font-black uppercase tracking-[0.3em] hover:bg-white transition-all transform translate-y-2 group-hover:translate-y-0 duration-300">
+                  <button 
+                    onClick={() => onSelectCar(car)}
+                    className="w-full py-3 bg-cyan-500 text-black text-[10px] font-black uppercase tracking-[0.3em] hover:bg-white transition-all transform translate-y-2 group-hover:translate-y-0 duration-300"
+                  >
                     Details
                   </button>
-                  <button className="w-full py-3 bg-white/10 border border-cyan-500/50 text-cyan-500 text-[10px] font-black uppercase tracking-[0.3em] hover:bg-cyan-500/20 transition-all duration-300">
+                  <button 
+                    onClick={(e) => {
+                      e.stopPropagation();
+                      const whatsappUrl = generateWhatsAppUrl(car.famousName, car.modelDetail, car.price);
+                      window.open(whatsappUrl, '_blank');
+                    }}
+                    className="w-full py-3 bg-white/10 border border-cyan-500/50 text-cyan-500 text-[10px] font-black uppercase tracking-[0.3em] hover:bg-cyan-500/20 transition-all duration-300"
+                  >
                     Contact Seller
                   </button>
                 </div>
@@ -300,8 +316,27 @@ export default function BuyCar({ onSelectCar }: InventoryProps) {
       {/* Background Grid */}
       <div className="absolute inset-0 grid-bg opacity-5 pointer-events-none" />
       
+      {/* Loading State */}
+      {loading && (
+        <div className="fixed inset-0 bg-black/50 backdrop-blur-sm z-50 flex items-center justify-center">
+          <div className="text-center">
+            <div className="w-16 h-16 border-4 border-cyan-500/30 border-t-cyan-500 rounded-full animate-spin mx-auto mb-4"></div>
+            <div className="text-cyan-500 font-mono text-[10px] tracking-[0.4em]">LOADING INVENTORY...</div>
+          </div>
+        </div>
+      )}
+      
+      {/* Error State */}
+      {error && !loading && (
+        <div className="relative z-10 mb-8 p-4 border border-red-500/50 bg-red-500/10 text-red-400 text-sm">
+          <div className="font-mono text-[10px] tracking-[0.3em] mb-2">[ API ERROR ]</div>
+          {error}
+          <div className="mt-2 text-[9px] text-red-500/70">Showing cached data...</div>
+        </div>
+      )}
+      
       <div className="relative z-10 mb-12">
-        <div className="text-cyan-500 font-mono text-[10px] tracking-[0.4em] mb-2">[ MARKET_BROKER_ACCESS ]</div>
+        <div className="text-cyan-500 font-mono text-[10px] tracking-[0.4em] mb-2">[ MARKET BROKER ACCESS ]</div>
         <h1 className="text-5xl md:text-6xl font-black italic text-white uppercase tracking-tighter mb-8">
           Inventory <span className="text-cyan-500">System</span>
         </h1>
@@ -311,7 +346,7 @@ export default function BuyCar({ onSelectCar }: InventoryProps) {
             <Search className="absolute left-4 top-1/2 -translate-y-1/2 w-5 h-5 text-zinc-600 group-focus-within:text-cyan-500 transition-colors" />
             <input 
               type="text"
-              placeholder="SEARCH_BY_MODEL_BRAND_CHASSIS..."
+              placeholder="SEARCH BY MODEL BRAND CHASSIS..."
               value={filter}
               onChange={(e) => handleFilterChange(e.target.value)}
               className="w-full bg-zinc-950 border border-white/10 py-5 pl-14 pr-6 text-xs font-mono uppercase tracking-[0.2em] text-white focus:outline-none focus:border-cyan-500/50 transition-all placeholder:text-zinc-800"
@@ -503,10 +538,10 @@ export default function BuyCar({ onSelectCar }: InventoryProps) {
           <div>
             <h2 className="text-2xl font-black italic text-purple-500 uppercase tracking-tighter mb-8 flex items-center gap-4">
               <span className="w-8 h-px bg-purple-500/30" />
-              MODIFIED_SPECS
+              MODIFIED SPECS
               <span className="grow h-px bg-zinc-900" />
             </h2>
-            {renderCarGrid(modifiedCars)}
+            {renderCarGrid(modifiedCars as Car[])}
           </div>
         )}
 
@@ -514,16 +549,16 @@ export default function BuyCar({ onSelectCar }: InventoryProps) {
           <div>
             <h2 className="text-2xl font-black italic text-zinc-500 uppercase tracking-tighter mb-8 flex items-center gap-4">
               <span className="w-8 h-px bg-zinc-500/30" />
-              STANDARD_SPECS
+              STANDARD SPECS
               <span className="grow h-px bg-zinc-900" />
             </h2>
-            {renderCarGrid(standardCars)}
+            {renderCarGrid(standardCars as Car[])}
           </div>
         )}
 
         {filteredCars.length === 0 && (
           <div className="py-24 text-center border border-white/5 bg-zinc-950/50">
-            <div className="text-zinc-600 font-mono text-[10px] tracking-[0.5em] mb-4">SEARCH_RESULT: NULL</div>
+            <div className="text-zinc-600 font-mono text-[10px] tracking-[0.5em] mb-4">SEARCH RESULT: NULL</div>
             <div className="text-2xl font-black italic text-zinc-800 uppercase">No Units Found Matching Parameters</div>
           </div>
         )}
@@ -576,7 +611,7 @@ export default function BuyCar({ onSelectCar }: InventoryProps) {
 
           <div className="flex items-center gap-6 overflow-x-auto pb-2 md:pb-0">
             <div className="text-cyan-500 font-mono text-[10px] tracking-widest uppercase hidden md:block">
-              COMPARE_QUEUE [{compareList.length}/3]
+              COMPARE QUEUE [{compareList.length}/3]
             </div>
             <div className="flex gap-4">
               {compareList.map(car => (
@@ -602,7 +637,7 @@ export default function BuyCar({ onSelectCar }: InventoryProps) {
               ))}
               {compareList.length < 3 && (
                 <div className="hidden sm:flex border border-zinc-800 border-dashed p-2 min-w-[150px] items-center justify-center text-zinc-700 font-mono text-[8px] uppercase tracking-widest">
-                  Slot_Empty_ID
+                  Slot Empty ID
                 </div>
               )}
             </div>
@@ -613,13 +648,13 @@ export default function BuyCar({ onSelectCar }: InventoryProps) {
               onClick={() => setCompareList([])}
               className="text-[9px] font-mono text-zinc-500 hover:text-white uppercase tracking-widest px-4 hidden sm:block"
             >
-              Clear_All
+              Clear All
             </button>
             <button
               onClick={() => setIsCompareModalOpen(true)}
               className="px-8 py-3 bg-cyan-500 text-black text-[10px] font-black uppercase tracking-[0.3em] hover:bg-white transition-all shadow-[0_0_15px_rgba(6,182,212,0.4)]"
             >
-              Initialize_Comparison
+              Initialize Comparison
             </button>
           </div>
         </div>

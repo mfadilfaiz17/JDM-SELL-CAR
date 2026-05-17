@@ -102,7 +102,7 @@ export default function Navbar({ onSelectCar }: NavbarProps) {
         </div>
         <input 
           type="text" 
-          placeholder="CHASSIS_ID_SCNR"
+          placeholder="CHASSIS ID SCNR"
           value={searchVin}
           onChange={(e) => setSearchVin(e.target.value)}
           className="w-full bg-zinc-950/30 border border-white/5 py-2.5 pl-11 pr-4 rounded-none font-mono text-[9px] text-white focus:outline-none focus:border-cyan-500/50 focus:bg-zinc-900/50 uppercase tracking-[0.2em] transition-all placeholder:text-zinc-800"

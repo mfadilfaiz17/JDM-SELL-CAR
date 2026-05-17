@@ -7,6 +7,8 @@ import React, { useState } from 'react';
 import { motion, AnimatePresence } from 'motion/react';
 import { Link } from 'react-router-dom';
 import { POPULAR_CARS, Car } from '../constants';
+import { generateWhatsAppUrl } from '../config/contact';
+import { useCars } from '../hooks/useCars';
 
 interface PopularCarsProps {
   onSelectCar: (car: Car) => void;
@@ -14,10 +16,15 @@ interface PopularCarsProps {
 
 export default function PopularCars({ onSelectCar }: PopularCarsProps) {
   const [activeCategory, setActiveCategory] = useState<'ALL' | 'Modified' | 'Standard'>('ALL');
-
-  const filteredCars = POPULAR_CARS.filter(car => 
+  
+  // Fetch cars from API
+  const { cars: apiCars, loading } = useCars();
+  
+  // Use API cars if available, fallback to constants, then take first 6
+  const allCars = apiCars.length > 0 ? apiCars : POPULAR_CARS;
+  const filteredCars = allCars.filter(car => 
     activeCategory === 'ALL' || car.category === activeCategory
-  );
+  ).slice(0, 6); // Show only 6 cars
 
   const formatIDR = (price: number) => {
     // price is in thousands (k), convert to actual USD then to IDR
@@ -33,7 +40,7 @@ export default function PopularCars({ onSelectCar }: PopularCarsProps) {
     <section className="px-6 md:px-12 py-16 md:py-24 bg-[#050505] relative">
       <div className="flex flex-col sm:flex-row items-center justify-between mb-12 md:mb-16 relative z-10 gap-6">
         <div className="text-center sm:text-left">
-          <div className="text-cyan-500 font-mono text-[10px] tracking-[0.4em] mb-2">[ ELITE_INVENTORY ]</div>
+          <div className="text-cyan-500 font-mono text-[10px] tracking-[0.4em] mb-2">[ ELITE INVENTORY ]</div>
           <h2 className="text-3xl md:text-4xl font-black italic text-white uppercase tracking-tighter leading-tight">
             Hot Specimens
           </h2>
@@ -120,7 +127,7 @@ export default function PopularCars({ onSelectCar }: PopularCarsProps) {
                 />
               ) : (
                 <div className="w-full h-full flex items-center justify-center border border-white/5 bg-white/5">
-                  <span className="text-[10px] font-mono text-zinc-800 uppercase tracking-widest">No_Image_Data</span>
+                  <span className="text-[10px] font-mono text-zinc-800 uppercase tracking-widest">No Image Data</span>
                 </div>
               )}
               </div>
@@ -148,19 +155,19 @@ export default function PopularCars({ onSelectCar }: PopularCarsProps) {
                   className="grid grid-cols-2 gap-4 overflow-hidden pt-2"
                 >
                   <div className="border-l border-cyan-500/30 pl-3">
-                    <span className="block text-[7px] text-zinc-600 uppercase font-mono tracking-widest mb-1">Chassis_Ref</span>
+                    <span className="block text-[7px] text-zinc-600 uppercase font-mono tracking-widest mb-1">Chassis Ref</span>
                     <span className="block text-[10px] text-zinc-300 font-mono uppercase">{car.chassis.split('-')[0]}</span>
                   </div>
                   <div className="border-l border-cyan-500/30 pl-3">
-                    <span className="block text-[7px] text-zinc-600 uppercase font-mono tracking-widest mb-1">Trans_System</span>
+                    <span className="block text-[7px] text-zinc-600 uppercase font-mono tracking-widest mb-1">Trans System</span>
                     <span className="block text-[10px] text-zinc-300 font-mono uppercase">{car.transmission || 'MT-6'}</span>
                   </div>
                 </motion.div>
               </div>
 
               {/* Price & Action */}
-              <div className="pt-6 border-t border-white/5 flex items-end justify-between relative z-10">
-                <div>
+              <div className="pt-6 border-t border-white/5 relative z-10">
+                <div className="mb-4">
                   <span className="block text-[8px] uppercase font-bold text-zinc-600 mb-1 font-mono">Daily Rate</span>
                   <div className="flex flex-col">
                     <span className="text-3xl font-black italic tracking-tighter">${car.price}k</span>
@@ -169,9 +176,35 @@ export default function PopularCars({ onSelectCar }: PopularCarsProps) {
                     </span>
                   </div>
                 </div>
-                <button className="px-6 py-3 bg-zinc-900 group-hover:bg-cyan-500 group-hover:text-black text-white text-[10px] font-black uppercase tracking-[0.2em] transition-all">
-                  Details
-                </button>
+                
+                {/* Hover Reveal Buttons */}
+                <motion.div 
+                  variants={{
+                    initial: { opacity: 0, height: 0 },
+                    hover: { opacity: 1, height: 'auto', transition: { duration: 0.3 } }
+                  }}
+                  className="space-y-2 overflow-hidden"
+                >
+                  <button 
+                    onClick={(e) => {
+                      e.stopPropagation();
+                      onSelectCar(car);
+                    }}
+                    className="w-full py-3 bg-cyan-500 text-black text-[10px] font-black uppercase tracking-[0.3em] hover:bg-white transition-all"
+                  >
+                    Details
+                  </button>
+                  <button
+                    onClick={(e) => {
+                      e.stopPropagation();
+                      const whatsappUrl = generateWhatsAppUrl(car.famousName, car.modelDetail, car.price);
+                      window.open(whatsappUrl, '_blank');
+                    }}
+                    className="w-full py-3 bg-white/10 border border-cyan-500/50 text-cyan-500 text-[10px] font-black uppercase tracking-[0.3em] hover:bg-cyan-500/20 transition-all"
+                  >
+                    Contact Seller
+                  </button>
+                </motion.div>
               </div>
             </motion.div>
           ))}

@@ -166,4 +166,21 @@ export const apiClient = {
       });
     },
   },
+
+  // Upload
+  upload: {
+    async image(imageBase64: string, filename: string) {
+      return apiClient.request('/upload/image', {
+        method: 'POST',
+        body: JSON.stringify({ image: imageBase64, filename }),
+      });
+    },
+
+    async deleteImage(imagePath: string) {
+      return apiClient.request('/upload/image', {
+        method: 'DELETE',
+        body: JSON.stringify({ imagePath }),
+      });
+    },
+  },
 };
