@@ -11,6 +11,7 @@
     "test": "jest",
     "test:watch": "jest --watch",
     "test:coverage": "jest --coverage",
+    "test:connection": "node test-connection.js",
     "lint": "tsc --noEmit",
     "clean": "rm -rf dist"
   },
@@ -26,6 +27,8 @@
     "cors": "^2.8.5",
     "dotenv": "^17.4.2",
     "express": "^4.21.2",
+    "express-rate-limit": "^7.1.5",
+    "helmet": "^7.1.0",
     "jsonwebtoken": "^9.0.0",
     "mongoose": "^8.0.0"
   },

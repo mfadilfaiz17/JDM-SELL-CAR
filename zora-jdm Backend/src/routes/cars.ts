@@ -1,5 +1,6 @@
 import { Router, Request, Response } from 'express';
 import Car from '../models/Car.js';
+import { authMiddleware, AuthRequest } from '../middleware/auth.js';
 
 const router = Router();
 
@@ -100,65 +101,172 @@ router.get('/:id', async (req: Request, res: Response) => {
   }
 });
 
-// Create car
-router.post('/', async (req: Request, res: Response) => {
+// Create car (requires authentication)
+router.post('/', authMiddleware, async (req: AuthRequest, res: Response) => {
   try {
+    // Validate required fields
+    const { brand, model, year, price, mileage, condition, fuelType, transmission, color } = req.body;
+    
+    if (!brand || !model || !year || !price || !mileage || !condition || !fuelType || !transmission || !color) {
+      return res.status(400).json({ error: 'Missing required fields' });
+    }
+
+    // Validate data types and ranges
+    if (typeof price !== 'number' || price <= 0) {
+      return res.status(400).json({ error: 'Price must be a positive number' });
+    }
+
+    if (typeof mileage !== 'number' || mileage < 0) {
+      return res.status(400).json({ error: 'Mileage must be a non-negative number' });
+    }
+
+    if (typeof year !== 'number' || year < 1900 || year > new Date().getFullYear() + 1) {
+      return res.status(400).json({ error: 'Invalid year' });
+    }
+
+    // Validate enum values
+    const validConditions = ['excellent', 'good', 'fair', 'poor'];
+    if (!validConditions.includes(condition)) {
+      return res.status(400).json({ error: 'Invalid condition value' });
+    }
+
+    const validFuelTypes = ['petrol', 'diesel', 'hybrid', 'electric'];
+    if (!validFuelTypes.includes(fuelType)) {
+      return res.status(400).json({ error: 'Invalid fuel type' });
+    }
+
+    const validTransmissions = ['manual', 'automatic'];
+    if (!validTransmissions.includes(transmission)) {
+      return res.status(400).json({ error: 'Invalid transmission type' });
+    }
+
     if (Car.db && Car.db.readyState === 1) {
-      const car = new Car(req.body);
+      // Set seller to authenticated user
+      const carData = {
+        ...req.body,
+        seller: req.user?.id
+      };
+      
+      const car = new Car(carData);
       await car.save();
       res.status(201).json(car);
     } else {
       // Mock creation
-      const newCar = { _id: Date.now().toString(), ...req.body };
+      const newCar = { 
+        _id: Date.now().toString(), 
+        ...req.body,
+        seller: req.user?.id,
+        createdAt: new Date(),
+        updatedAt: new Date()
+      };
       mockCars.push(newCar);
       res.status(201).json(newCar);
     }
-  } catch (error) {
-    res.status(400).json({ error: 'Failed to create car' });
+  } catch (error: any) {
+    console.error('Create car error:', error);
+    res.status(400).json({ error: error.message || 'Failed to create car' });
   }
 });
 
-// Update car
-router.put('/:id', async (req: Request, res: Response) => {
+// Update car (requires authentication and ownership)
+router.put('/:id', authMiddleware, async (req: AuthRequest, res: Response) => {
   try {
     if (Car.db && Car.db.readyState === 1) {
-      const car = await Car.findByIdAndUpdate(req.params.id, req.body, { new: true });
+      // Find car first to check ownership
+      const car = await Car.findById(req.params.id);
+      
       if (!car) {
         return res.status(404).json({ error: 'Car not found' });
       }
-      res.json(car);
+
+      // Check ownership (only owner or admin can update)
+      if (car.seller.toString() !== req.user?.id && req.user?.role !== 'admin') {
+        return res.status(403).json({ error: 'You do not have permission to update this car' });
+      }
+
+      // Validate if updating critical fields
+      if (req.body.price !== undefined) {
+        if (typeof req.body.price !== 'number' || req.body.price <= 0) {
+          return res.status(400).json({ error: 'Price must be a positive number' });
+        }
+      }
+
+      if (req.body.mileage !== undefined) {
+        if (typeof req.body.mileage !== 'number' || req.body.mileage < 0) {
+          return res.status(400).json({ error: 'Mileage must be a non-negative number' });
+        }
+      }
+
+      if (req.body.condition !== undefined) {
+        const validConditions = ['excellent', 'good', 'fair', 'poor'];
+        if (!validConditions.includes(req.body.condition)) {
+          return res.status(400).json({ error: 'Invalid condition value' });
+        }
+      }
+
+      // Update car
+      const updatedCar = await Car.findByIdAndUpdate(
+        req.params.id, 
+        req.body, 
+        { new: true, runValidators: true }
+      );
+      
+      res.json(updatedCar);
     } else {
       const carIndex = mockCars.findIndex(c => c._id === req.params.id);
       if (carIndex === -1) {
         return res.status(404).json({ error: 'Car not found' });
       }
-      mockCars[carIndex] = { ...mockCars[carIndex], ...req.body };
+      
+      // Check ownership in mock mode
+      if (mockCars[carIndex].seller !== req.user?.id && req.user?.role !== 'admin') {
+        return res.status(403).json({ error: 'You do not have permission to update this car' });
+      }
+      
+      mockCars[carIndex] = { ...mockCars[carIndex], ...req.body, updatedAt: new Date() };
       res.json(mockCars[carIndex]);
     }
-  } catch (error) {
-    res.status(400).json({ error: 'Failed to update car' });
+  } catch (error: any) {
+    console.error('Update car error:', error);
+    res.status(400).json({ error: error.message || 'Failed to update car' });
   }
 });
 
-// Delete car
-router.delete('/:id', async (req: Request, res: Response) => {
+// Delete car (requires authentication and ownership)
+router.delete('/:id', authMiddleware, async (req: AuthRequest, res: Response) => {
   try {
     if (Car.db && Car.db.readyState === 1) {
-      const car = await Car.findByIdAndDelete(req.params.id);
+      // Find car first to check ownership
+      const car = await Car.findById(req.params.id);
+      
       if (!car) {
         return res.status(404).json({ error: 'Car not found' });
       }
+
+      // Check ownership (only owner or admin can delete)
+      if (car.seller.toString() !== req.user?.id && req.user?.role !== 'admin') {
+        return res.status(403).json({ error: 'You do not have permission to delete this car' });
+      }
+
+      await Car.findByIdAndDelete(req.params.id);
       res.json({ message: 'Car deleted successfully' });
     } else {
       const carIndex = mockCars.findIndex(c => c._id === req.params.id);
       if (carIndex === -1) {
         return res.status(404).json({ error: 'Car not found' });
       }
+      
+      // Check ownership in mock mode
+      if (mockCars[carIndex].seller !== req.user?.id && req.user?.role !== 'admin') {
+        return res.status(403).json({ error: 'You do not have permission to delete this car' });
+      }
+      
       mockCars.splice(carIndex, 1);
       res.json({ message: 'Car deleted successfully' });
     }
-  } catch (error) {
-    res.status(500).json({ error: 'Failed to delete car' });
+  } catch (error: any) {
+    console.error('Delete car error:', error);
+    res.status(500).json({ error: error.message || 'Failed to delete car' });
   }
 });
 

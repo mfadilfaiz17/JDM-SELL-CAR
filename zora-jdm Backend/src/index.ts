@@ -1,5 +1,7 @@
 import express, { Express, Request, Response } from 'express';
 import cors from 'cors';
+import helmet from 'helmet';
+import rateLimit from 'express-rate-limit';
 import dotenv from 'dotenv';
 import path from 'path';
 import { fileURLToPath } from 'url';
@@ -16,6 +18,32 @@ dotenv.config();
 
 const app: Express = express();
 const port = process.env.PORT || 5000;
+
+// Security: Helmet - Set security HTTP headers
+app.use(helmet({
+  crossOriginResourcePolicy: { policy: "cross-origin" },
+  contentSecurityPolicy: false // Disable for development, enable in production
+}));
+
+// Security: Rate limiting
+const limiter = rateLimit({
+  windowMs: 15 * 60 * 1000, // 15 minutes
+  max: 100, // Limit each IP to 100 requests per windowMs
+  message: 'Too many requests from this IP, please try again later.',
+  standardHeaders: true,
+  legacyHeaders: false,
+});
+
+// Apply rate limiting to all routes
+app.use('/api/', limiter);
+
+// Stricter rate limit for auth routes
+const authLimiter = rateLimit({
+  windowMs: 15 * 60 * 1000, // 15 minutes
+  max: 50, // Naikkan dari 5 ke 50 untuk development
+  message: 'Too many authentication attempts, please try again later.',
+  skipSuccessfulRequests: true,
+});
 
 // Middleware
 app.use(cors({
@@ -39,7 +67,7 @@ app.get('/api/version', (req: Request, res: Response) => {
 });
 
 // Routes
-app.use('/api/auth', authRouter);
+app.use('/api/auth', authLimiter, authRouter);
 app.use('/api/cars', carsRouter);
 app.use('/api/users', usersRouter);
 app.use('/api/upload', uploadRouter);
@@ -57,6 +85,16 @@ app.use((err: any, req: Request, res: Response) => {
 
 const startServer = async () => {
   try {
+    // Validate required environment variables
+    const requiredEnvVars = ['JWT_SECRET', 'MONGODB_URI'];
+    const missingEnvVars = requiredEnvVars.filter(varName => !process.env[varName]);
+    
+    if (missingEnvVars.length > 0) {
+      console.error('❌ Missing required environment variables:', missingEnvVars.join(', '));
+      console.error('📝 Please check your .env file');
+      process.exit(1);
+    }
+
     // Try to connect to database, but don't fail if it doesn't work
     try {
       await connectDB();
@@ -69,6 +107,7 @@ const startServer = async () => {
       console.log(`🚀 Server is running at http://localhost:${port}`);
       console.log(`📝 Environment: ${process.env.NODE_ENV || 'development'}`);
       console.log(`📚 API Version: ${process.env.API_VERSION || 'v1'}`);
+      console.log(`🔒 Security: Helmet enabled, Rate limiting active`);
       console.log(`\n📋 Available endpoints:`);
       console.log(`   GET  /api/health - Health check`);
       console.log(`   GET  /api/version - API version`);
