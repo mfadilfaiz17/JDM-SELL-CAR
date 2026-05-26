@@ -40,7 +40,7 @@ export const adminMiddleware = (req: AuthRequest, res: Response, next: NextFunct
 };
 
 export const sellerMiddleware = (req: AuthRequest, res: Response, next: NextFunction) => {
-  if (req.user?.role !== 'seller' && req.user?.role !== 'admin') {
+  if (req.user?.role !== 'seller' && req.user?.role !== 'both' && req.user?.role !== 'admin') {
     return res.status(403).json({ error: 'Seller access required' });
   }
   next();

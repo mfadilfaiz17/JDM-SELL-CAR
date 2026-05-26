@@ -25,20 +25,52 @@ router.post('/register', async (req: Request, res: Response) => {
   try {
     const { name, email, password, phone, role } = req.body;
 
+    console.log('📝 Register request:', { name, email, role });
+
     // Validation
     if (!name || !email || !password) {
-      return res.status(400).json({ error: 'Name, email, and password are required' });
+      console.warn('❌ Register failed: Missing required fields');
+      return res.status(400).json({ 
+        error: 'Name, email, and password are required',
+        code: 'MISSING_FIELDS'
+      });
+    }
+
+    // Email format validation
+    const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+    if (!emailRegex.test(email)) {
+      console.warn('❌ Register failed: Invalid email format');
+      return res.status(400).json({ 
+        error: 'Please provide a valid email address',
+        code: 'INVALID_EMAIL'
+      });
     }
 
     if (password.length < 6) {
-      return res.status(400).json({ error: 'Password must be at least 6 characters' });
+      console.warn('❌ Register failed: Password too short');
+      return res.status(400).json({ 
+        error: 'Password must be at least 6 characters',
+        code: 'WEAK_PASSWORD'
+      });
     }
 
     // Check if user already exists
+    console.log('🔍 Checking if email already exists...');
     const existingUser = await User.findOne({ email });
     if (existingUser) {
-      return res.status(409).json({ error: 'Email already registered' });
+      console.warn('❌ Register failed: Email already registered');
+      return res.status(409).json({ 
+        error: 'Email already registered',
+        code: 'EMAIL_EXISTS'
+      });
     }
+
+    console.log('✅ Email is available, creating user...');
+
+    // Validate role
+    const validRoles = ['buyer', 'seller', 'both', 'admin'];
+    const userRole = (role && validRoles.includes(role)) ? role : 'buyer';
+    console.log('✅ Role validated:', userRole);
 
     // Create new user
     const user = new User({
@@ -46,14 +78,16 @@ router.post('/register', async (req: Request, res: Response) => {
       email,
       password,
       phone: phone || '',
-      role: role || 'buyer',
+      role: userRole,
       isVerified: true // Auto-verify for demo
     });
 
     await user.save();
+    console.log('✅ User saved to database:', user._id);
 
     // Generate token
     const token = generateToken(user._id.toString(), user.email, user.role);
+    console.log('✅ JWT token generated');
 
     res.status(201).json({
       message: 'User registered successfully',
@@ -66,8 +100,12 @@ router.post('/register', async (req: Request, res: Response) => {
       }
     });
   } catch (error: any) {
-    console.error('Register error:', error);
-    res.status(500).json({ error: error.message || 'Registration failed' });
+    console.error('❌ Register error:', error.message);
+    console.error('Stack:', error.stack);
+    res.status(500).json({ 
+      error: error.message || 'Registration failed',
+      code: 'REGISTER_ERROR'
+    });
   }
 });
 
@@ -76,25 +114,47 @@ router.post('/login', async (req: Request, res: Response) => {
   try {
     const { email, password } = req.body;
 
+    console.log('🔐 Login request:', { email });
+
     // Validation
     if (!email || !password) {
-      return res.status(400).json({ error: 'Email and password are required' });
+      console.warn('❌ Login failed: Missing email or password');
+      return res.status(400).json({ 
+        error: 'Email and password are required',
+        code: 'MISSING_CREDENTIALS'
+      });
     }
+
+    console.log('🔍 Looking up user in database...');
 
     // Find user and include password field
     const user = await User.findOne({ email }).select('+password');
     if (!user) {
-      return res.status(401).json({ error: 'Invalid email or password' });
+      console.warn('❌ Login failed: User not found');
+      return res.status(401).json({ 
+        error: 'Invalid email or password',
+        code: 'INVALID_CREDENTIALS'
+      });
     }
+
+    console.log('✅ User found:', user._id);
+    console.log('🔍 Comparing passwords...');
 
     // Compare passwords
     const isPasswordValid = await user.comparePassword(password);
     if (!isPasswordValid) {
-      return res.status(401).json({ error: 'Invalid email or password' });
+      console.warn('❌ Login failed: Invalid password');
+      return res.status(401).json({ 
+        error: 'Invalid email or password',
+        code: 'INVALID_CREDENTIALS'
+      });
     }
+
+    console.log('✅ Password is correct');
 
     // Generate token
     const token = generateToken(user._id.toString(), user.email, user.role);
+    console.log('✅ JWT token generated');
 
     res.json({
       message: 'Login successful',
@@ -107,8 +167,12 @@ router.post('/login', async (req: Request, res: Response) => {
       }
     });
   } catch (error: any) {
-    console.error('Login error:', error);
-    res.status(500).json({ error: error.message || 'Login failed' });
+    console.error('❌ Login error:', error.message);
+    console.error('Stack:', error.stack);
+    res.status(500).json({ 
+      error: error.message || 'Login failed',
+      code: 'LOGIN_ERROR'
+    });
   }
 });
 

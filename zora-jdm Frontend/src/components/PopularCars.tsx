@@ -6,7 +6,7 @@
 import React, { useState } from 'react';
 import { motion, AnimatePresence } from 'motion/react';
 import { Link } from 'react-router-dom';
-import { POPULAR_CARS, Car } from '../constants';
+import { Car } from '../constants';
 import { generateWhatsAppUrl } from '../config/contact';
 import { useCars } from '../hooks/useCars';
 
@@ -17,14 +17,13 @@ interface PopularCarsProps {
 export default function PopularCars({ onSelectCar }: PopularCarsProps) {
   const [activeCategory, setActiveCategory] = useState<'ALL' | 'Modified' | 'Standard'>('ALL');
   
-  // Fetch cars from API
+  // Fetch cars from API ONLY
   const { cars: apiCars, loading } = useCars();
   
-  // Use API cars if available, fallback to constants, then take first 6
-  const allCars = apiCars.length > 0 ? apiCars : POPULAR_CARS;
-  const filteredCars = allCars.filter(car => 
+  // Use only API cars - NO FALLBACK TO MOCK
+  const filteredCars = apiCars.filter(car => 
     activeCategory === 'ALL' || car.category === activeCategory
-  ).slice(0, 6); // Show only 6 cars
+  ).slice(0, 6);
 
   const formatIDR = (price: number) => {
     // price is in thousands (k), convert to actual USD then to IDR

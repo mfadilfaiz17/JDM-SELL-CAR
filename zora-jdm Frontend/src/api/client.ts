@@ -1,6 +1,6 @@
 // API Client untuk komunikasi dengan backend
 
-const API_BASE_URL = import.meta.env.VITE_API_URL || 'http://localhost:5000/api';
+const API_BASE_URL = import.meta.env.VITE_API_URL || 'http://localhost:5001/api';
 
 interface RequestOptions extends RequestInit {
   params?: Record<string, string | number>;
@@ -23,8 +23,11 @@ export const apiClient = {
     const token = localStorage.getItem('authToken');
     const headers: Record<string, string> = {
       'Content-Type': 'application/json',
-      ...fetchOptions.headers,
     };
+    
+    if (fetchOptions.headers && typeof fetchOptions.headers === 'object') {
+      Object.assign(headers, fetchOptions.headers);
+    }
 
     // Add Authorization header if token exists
     if (token) {
@@ -181,6 +184,29 @@ export const apiClient = {
         method: 'DELETE',
         body: JSON.stringify({ imagePath }),
       });
+    },
+  },
+
+  // Favorites
+  favorites: {
+    async getAll(): Promise<string[]> {
+      return apiClient.request('/favorites');
+    },
+
+    async add(carId: string) {
+      return apiClient.request(`/favorites/${carId}`, {
+        method: 'POST',
+      });
+    },
+
+    async remove(carId: string) {
+      return apiClient.request(`/favorites/${carId}`, {
+        method: 'DELETE',
+      });
+    },
+
+    async getCars() {
+      return apiClient.request('/favorites/cars');
     },
   },
 };

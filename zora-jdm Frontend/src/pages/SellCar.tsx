@@ -168,7 +168,7 @@ export default function SellCar() {
       // Map frontend form data to backend format
       const carData = {
         brand: formData.brand,
-        model: formData.model,
+        carModel: formData.model,
         year: formData.year,
         price: formData.price,
         mileage: formData.mileage,

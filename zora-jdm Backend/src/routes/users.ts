@@ -30,11 +30,11 @@ router.get('/', async (req: Request, res: Response) => {
       const users = await User.find();
       res.json(users);
     } else {
-      console.log('📝 Using mock users data (database not connected)');
+      console.log('Using mock users data (database not connected)');
       res.json(mockUsers);
     }
   } catch (error) {
-    console.log('📝 Database error, using mock users data');
+    console.log('Database error, using mock users data');
     res.json(mockUsers);
   }
 });

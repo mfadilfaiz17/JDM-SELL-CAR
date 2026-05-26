@@ -14,226 +14,255 @@
  * 5. Password Change
  */
 
-describe('Authentication Integration Tests', () => {
-  const testUser = {
-    name: 'Test User',
-    email: 'test@example.com',
-    password: 'TestPassword123!',
+const API_BASE_URL = process.env.API_URL || 'http://localhost:5001/api';
+
+// Test data
+const testUser = {
+  name: 'Test User',
+  email: `test-${Date.now()}@example.com`,
+  password: 'TestPassword123!',
+  role: 'buyer'
+};
+
+let authToken: string;
+let userId: string;
+
+/**
+ * Helper function to make API calls
+ */
+async function apiCall(endpoint: string, options: RequestInit = {}): Promise<any> {
+  const url = `${API_BASE_URL}${endpoint}`;
+  const headers: Record<string, string> = {
+    'Content-Type': 'application/json',
+    ...(options.headers as Record<string, string>)
   };
 
+  if (authToken) {
+    headers['Authorization'] = `Bearer ${authToken}`;
+  }
+
+  const response = await fetch(url, {
+    ...options,
+    headers
+  });
+
+  if (!response.ok) {
+    const error: any = await response.json();
+    throw new Error(`API Error: ${response.status} - ${error?.message || response.statusText}`);
+  }
+
+  return response.json() as Promise<any>;
+}
+
+describe('Authentication Integration Tests', () => {
   describe('User Registration Flow', () => {
     test('should register a new user successfully', async () => {
-      // Simulate registration
-      const user = {
-        ...testUser,
-        id: 'user-123',
-        createdAt: new Date(),
-      };
-      
-      expect(user.email).toBe(testUser.email);
-      expect(user.name).toBe(testUser.name);
-      expect(user.id).toBeDefined();
+      const response = await apiCall('/auth/register', {
+        method: 'POST',
+        body: JSON.stringify({
+          name: testUser.name,
+          email: testUser.email,
+          password: testUser.password,
+          role: testUser.role
+        })
+      });
+
+      expect(response).toBeDefined();
+      expect(response.user).toBeDefined();
+      expect(response.user.email).toBe(testUser.email);
+      expect(response.token).toBeDefined();
+
+      // Store for later tests
+      authToken = response.token;
+      userId = response.user.id;
     });
 
     test('should reject duplicate email registration', async () => {
-      // Simulate duplicate check
-      const existingEmails = ['test@example.com'];
-      const isDuplicate = existingEmails.includes(testUser.email);
-      
-      expect(isDuplicate).toBe(true);
+      try {
+        await apiCall('/auth/register', {
+          method: 'POST',
+          body: JSON.stringify({
+            name: 'Another User',
+            email: testUser.email,
+            password: 'Password123!',
+            role: 'seller'
+          })
+        });
+        throw new Error('Should have thrown error for duplicate email');
+      } catch (error: any) {
+        expect(error.message).toContain('API Error');
+      }
     });
 
-    test('should validate password strength', () => {
-      const weakPassword = '123';
-      const strongPassword = 'TestPassword123!';
-      
-      const isWeak = weakPassword.length < 6;
-      const isStrong = strongPassword.length >= 6;
-      
-      expect(isWeak).toBe(true);
-      expect(isStrong).toBe(true);
+    test('should validate email format', async () => {
+      try {
+        await apiCall('/auth/register', {
+          method: 'POST',
+          body: JSON.stringify({
+            name: 'Test User',
+            email: 'invalid-email',
+            password: 'Password123!',
+            role: 'buyer'
+          })
+        });
+        throw new Error('Should have thrown error for invalid email');
+      } catch (error: any) {
+        expect(error.message).toContain('API Error');
+      }
     });
 
-    test('should validate email format', () => {
-      const validEmail = 'user@example.com';
-      const invalidEmail = 'invalid-email';
-      
-      const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
-      
-      expect(emailRegex.test(validEmail)).toBe(true);
-      expect(emailRegex.test(invalidEmail)).toBe(false);
+    test('should validate password strength', async () => {
+      try {
+        await apiCall('/auth/register', {
+          method: 'POST',
+          body: JSON.stringify({
+            name: 'Test User',
+            email: `test-weak-${Date.now()}@example.com`,
+            password: '123',
+            role: 'buyer'
+          })
+        });
+        throw new Error('Should have thrown error for weak password');
+      } catch (error: any) {
+        expect(error.message).toContain('API Error');
+      }
     });
   });
 
   describe('User Login Flow', () => {
     test('should login user with correct credentials', async () => {
-      // Simulate login
-      const credentials = {
-        email: testUser.email,
-        password: testUser.password,
-      };
-      
-      const isValid = credentials.email === testUser.email && 
-                      credentials.password === testUser.password;
-      
-      expect(isValid).toBe(true);
+      const response = await apiCall('/auth/login', {
+        method: 'POST',
+        body: JSON.stringify({
+          email: testUser.email,
+          password: testUser.password
+        })
+      });
+
+      expect(response).toBeDefined();
+      expect(response.user).toBeDefined();
+      expect(response.user.email).toBe(testUser.email);
+      expect(response.token).toBeDefined();
+
+      // Update token
+      authToken = response.token;
     });
 
     test('should reject login with incorrect password', async () => {
-      const credentials = {
-        email: testUser.email,
-        password: 'WrongPassword',
-      };
-      
-      const isValid = credentials.password === testUser.password;
-      
-      expect(isValid).toBe(false);
+      try {
+        await apiCall('/auth/login', {
+          method: 'POST',
+          body: JSON.stringify({
+            email: testUser.email,
+            password: 'WrongPassword123!'
+          })
+        });
+        throw new Error('Should have thrown error for incorrect password');
+      } catch (error: any) {
+        expect(error.message).toContain('API Error');
+      }
     });
 
     test('should reject login with non-existent email', async () => {
-      const registeredEmails = ['test@example.com'];
-      const loginEmail = 'nonexistent@example.com';
-      
-      const userExists = registeredEmails.includes(loginEmail);
-      
-      expect(userExists).toBe(false);
-    });
-  });
-
-  describe('Token Generation', () => {
-    test('should generate JWT token on successful login', () => {
-      // Simulate token generation
-      const token = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9...';
-      
-      expect(token).toBeDefined();
-      expect(token.length).toBeGreaterThan(0);
-    });
-
-    test('should include user info in token payload', () => {
-      // Simulate token payload
-      const payload = {
-        userId: 'user-123',
-        email: testUser.email,
-        role: 'buyer',
-        iat: Math.floor(Date.now() / 1000),
-        exp: Math.floor(Date.now() / 1000) + 7 * 24 * 60 * 60, // 7 days
-      };
-      
-      expect(payload.userId).toBeDefined();
-      expect(payload.email).toBe(testUser.email);
-      expect(payload.exp).toBeGreaterThan(payload.iat);
-    });
-
-    test('should set token expiration to 7 days', () => {
-      const now = Math.floor(Date.now() / 1000);
-      const expiresIn = 7 * 24 * 60 * 60; // 7 days in seconds
-      const expiration = now + expiresIn;
-      
-      const daysUntilExpiry = (expiration - now) / (24 * 60 * 60);
-      
-      expect(daysUntilExpiry).toBe(7);
+      try {
+        await apiCall('/auth/login', {
+          method: 'POST',
+          body: JSON.stringify({
+            email: 'nonexistent@example.com',
+            password: 'Password123!'
+          })
+        });
+        throw new Error('Should have thrown error for non-existent user');
+      } catch (error: any) {
+        expect(error.message).toContain('API Error');
+      }
     });
   });
 
   describe('Protected Routes', () => {
-    test('should allow access with valid token', () => {
-      const token = 'valid-token';
-      const isValid = token && token.length > 0;
-      
-      expect(isValid).toBe(true);
+    test('should get user profile with valid token', async () => {
+      const response = await apiCall('/auth/me');
+
+      expect(response).toBeDefined();
+      expect(response.user).toBeDefined();
+      expect(response.user.email).toBe(testUser.email);
     });
 
-    test('should reject access without token', () => {
-      const token = null;
-      const isValid = token && token.length > 0;
-      
-      expect(isValid).toBe(false);
+    test('should reject request without token', async () => {
+      const token = authToken;
+      authToken = ''; // Clear token
+
+      try {
+        await apiCall('/auth/me');
+        authToken = token; // Restore token
+        throw new Error('Should have thrown error without token');
+      } catch (error: any) {
+        authToken = token; // Restore token
+        expect(error.message).toContain('API Error');
+      }
     });
 
-    test('should reject access with expired token', () => {
-      const expiredTime = Math.floor(Date.now() / 1000) - 1000; // 1000 seconds ago
-      const currentTime = Math.floor(Date.now() / 1000);
-      
-      const isExpired = currentTime > expiredTime;
-      
-      expect(isExpired).toBe(true);
-    });
+    test('should reject request with invalid token', async () => {
+      const token = authToken;
+      authToken = 'invalid-token-xyz';
 
-    test('should reject access with invalid token format', () => {
-      const invalidToken = 'not-a-valid-jwt';
-      const tokenParts = invalidToken.split('.');
-      
-      const isValid = tokenParts.length === 3;
-      
-      expect(isValid).toBe(false);
+      try {
+        await apiCall('/auth/me');
+        authToken = token; // Restore token
+        throw new Error('Should have thrown error with invalid token');
+      } catch (error: any) {
+        authToken = token; // Restore token
+        expect(error.message).toContain('API Error');
+      }
     });
   });
 
   describe('Password Management', () => {
     test('should change password successfully', async () => {
-      const oldPassword = testUser.password;
       const newPassword = 'NewPassword123!';
-      
-      expect(oldPassword).not.toBe(newPassword);
+
+      const response = await apiCall('/auth/change-password', {
+        method: 'POST',
+        body: JSON.stringify({
+          oldPassword: testUser.password,
+          newPassword: newPassword
+        })
+      });
+
+      expect(response).toBeDefined();
+
+      // Update test user password
+      testUser.password = newPassword;
     });
 
-    test('should require old password to change password', () => {
-      const oldPassword = testUser.password;
-      const providedOldPassword = testUser.password;
-      
-      const isCorrect = oldPassword === providedOldPassword;
-      
-      expect(isCorrect).toBe(true);
-    });
-
-    test('should reject password change with wrong old password', () => {
-      const oldPassword = testUser.password;
-      const providedOldPassword = 'WrongPassword';
-      
-      const isCorrect = oldPassword === providedOldPassword;
-      
-      expect(isCorrect).toBe(false);
-    });
-
-    test('should not allow reusing old password', () => {
-      const oldPassword = testUser.password;
-      const newPassword = testUser.password;
-      
-      const isDifferent = oldPassword !== newPassword;
-      
-      expect(isDifferent).toBe(false);
+    test('should reject password change with wrong old password', async () => {
+      try {
+        await apiCall('/auth/change-password', {
+          method: 'POST',
+          body: JSON.stringify({
+            oldPassword: 'WrongPassword123!',
+            newPassword: 'AnotherPassword123!'
+          })
+        });
+        throw new Error('Should have thrown error with wrong old password');
+      } catch (error: any) {
+        expect(error.message).toContain('API Error');
+      }
     });
   });
 
-  describe('Error Handling', () => {
-    test('should handle database connection errors', () => {
-      const dbConnected = false;
-      
-      if (!dbConnected) {
-        expect(dbConnected).toBe(false);
+  describe('Cleanup', () => {
+    test('should cleanup test user', async () => {
+      // This is optional - depends on your delete user endpoint
+      if (userId) {
+        try {
+          await apiCall(`/users/${userId}`, {
+            method: 'DELETE'
+          });
+        } catch (error) {
+          console.log('Cleanup note: Could not delete user');
+        }
       }
-    });
-
-    test('should handle invalid input gracefully', () => {
-      const invalidInput = null;
-      
-      const isValid = invalidInput !== null && typeof invalidInput === 'object';
-      
-      expect(isValid).toBe(false);
-    });
-
-    test('should return appropriate error messages', () => {
-      const errors = {
-        invalidEmail: 'Invalid email format',
-        weakPassword: 'Password must be at least 6 characters',
-        userExists: 'User already exists',
-        invalidCredentials: 'Invalid email or password',
-      };
-      
-      expect(errors.invalidEmail).toBeDefined();
-      expect(errors.weakPassword).toBeDefined();
-      expect(errors.userExists).toBeDefined();
-      expect(errors.invalidCredentials).toBeDefined();
     });
   });
 });

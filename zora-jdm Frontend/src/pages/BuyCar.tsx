@@ -3,7 +3,7 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
-import { ALL_CARS, Car } from '../constants';
+import { Car } from '../constants';
 import { Search, BarChart2, Heart, ChevronLeft, ChevronRight, X } from 'lucide-react';
 import React, { useState, useEffect } from 'react';
 import { useSearchParams } from 'react-router-dom';
@@ -31,13 +31,13 @@ export default function BuyCar({ onSelectCar }: InventoryProps) {
   const [minYear, setMinYear] = useState<number>(1970);
   const [maxYear, setMaxYear] = useState<number>(2025);
   const [minPrice, setMinPrice] = useState<number>(0);
-  const [maxPrice, setMaxPrice] = useState<number>(2000);
+  const [maxPrice, setMaxPrice] = useState<number>(1000000);
   const [showFilters, setShowFilters] = useState(false);
   const { isFavorite, toggleFavorite } = useFavorites();
   
-  // Fetch cars from API with fallback to constants
+  // Fetch cars from API ONLY - NO FALLBACK TO MOCK
   const { cars: apiCars, loading, error } = useCars();
-  const allCars = apiCars.length > 0 ? apiCars : ALL_CARS;
+  const allCars = apiCars;
 
   // Filter cars based on all criteria
   const filteredCars = allCars.filter(car => {

@@ -7,7 +7,7 @@ export interface IUser extends Document {
   password: string;
   phone?: string;
   address?: string;
-  role: 'buyer' | 'seller' | 'admin';
+  role: 'buyer' | 'seller' | 'both' | 'admin';
   profileImage?: string;
   isVerified: boolean;
   createdAt: Date;
@@ -46,7 +46,7 @@ const userSchema = new Schema<IUser>(
     },
     role: {
       type: String,
-      enum: ['buyer', 'seller', 'admin'],
+      enum: ['buyer', 'seller', 'both', 'admin'],
       default: 'buyer'
     },
     profileImage: {

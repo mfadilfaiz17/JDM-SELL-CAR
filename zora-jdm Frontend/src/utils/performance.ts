@@ -53,8 +53,8 @@ export function collectWebVitals(): PerformanceMetrics {
     try {
       const observer = new PerformanceObserver((list) => {
         const entries = list.getEntries();
-        const lastEntry = entries[entries.length - 1];
-        metrics.lcp = Math.round(lastEntry.renderTime || lastEntry.loadTime);
+        const lastEntry = entries[entries.length - 1] as any;
+        metrics.lcp = Math.round(lastEntry.renderTime || lastEntry.loadTime || 0);
       });
       observer.observe({ entryTypes: ['largest-contentful-paint'] });
     } catch (e) {

@@ -1,8 +1,8 @@
-import mongoose, { Schema, Document } from 'mongoose';
+import mongoose, { Schema } from 'mongoose';
 
-export interface ICar extends Document {
+interface ICarDocument {
   brand: string;
-  model: string;
+  carModel: string;
   year: number;
   price: number;
   mileage: number;
@@ -17,14 +17,14 @@ export interface ICar extends Document {
   updatedAt: Date;
 }
 
-const carSchema = new Schema<ICar>(
+const carSchema = new Schema<ICarDocument>(
   {
     brand: {
       type: String,
       required: true,
       trim: true
     },
-    model: {
+    carModel: {
       type: String,
       required: true,
       trim: true
@@ -79,4 +79,4 @@ const carSchema = new Schema<ICar>(
   }
 );
 
-export default mongoose.model<ICar>('Car', carSchema);
+export default mongoose.model<ICarDocument>('Car', carSchema);

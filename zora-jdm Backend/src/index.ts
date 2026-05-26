@@ -10,6 +10,7 @@ import carsRouter from './routes/cars.js';
 import usersRouter from './routes/users.js';
 import authRouter from './routes/auth.js';
 import uploadRouter from './routes/upload.js';
+import favoritesRouter from './routes/favorites.js';
 
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = path.dirname(__filename);
@@ -47,9 +48,21 @@ const authLimiter = rateLimit({
 
 // Middleware
 app.use(cors({
-  origin: process.env.FRONTEND_URL || 'http://localhost:3000',
-  credentials: true
+  origin: [
+    'http://localhost:3000',
+    'http://localhost:3001',
+    'http://127.0.0.1:3000',
+    'http://127.0.0.1:3001',
+    process.env.FRONTEND_URL || 'http://localhost:3000'
+  ],
+  credentials: true,
+  methods: ['GET', 'POST', 'PUT', 'DELETE', 'OPTIONS'],
+  allowedHeaders: ['Content-Type', 'Authorization']
 }));
+
+// Handle preflight requests
+app.options('*', cors());
+
 app.use(express.json({ limit: '50mb' }));
 app.use(express.urlencoded({ extended: true, limit: '50mb' }));
 
@@ -57,12 +70,12 @@ app.use(express.urlencoded({ extended: true, limit: '50mb' }));
 app.use('/uploads', express.static(path.join(__dirname, '../uploads')));
 
 // Health check endpoint
-app.get('/api/health', (req: Request, res: Response) => {
+app.get('/api/health', (_req: Request, res: Response) => {
   res.json({ status: 'OK', timestamp: new Date().toISOString() });
 });
 
 // API version endpoint
-app.get('/api/version', (req: Request, res: Response) => {
+app.get('/api/version', (_req: Request, res: Response) => {
   res.json({ version: process.env.API_VERSION || 'v1' });
 });
 
@@ -71,14 +84,16 @@ app.use('/api/auth', authLimiter, authRouter);
 app.use('/api/cars', carsRouter);
 app.use('/api/users', usersRouter);
 app.use('/api/upload', uploadRouter);
+app.use('/api/favorites', favoritesRouter);
+app.use('/api/favorites', favoritesRouter);
 
 // 404 handler
-app.use((req: Request, res: Response) => {
+app.use((_req: Request, res: Response) => {
   res.status(404).json({ error: 'Route not found' });
 });
 
 // Error handler
-app.use((err: any, req: Request, res: Response) => {
+app.use((err: any, _req: Request, res: Response) => {
   console.error(err);
   res.status(500).json({ error: 'Internal server error' });
 });
@@ -90,8 +105,8 @@ const startServer = async () => {
     const missingEnvVars = requiredEnvVars.filter(varName => !process.env[varName]);
     
     if (missingEnvVars.length > 0) {
-      console.error('❌ Missing required environment variables:', missingEnvVars.join(', '));
-      console.error('📝 Please check your .env file');
+      console.error('Missing required environment variables:', missingEnvVars.join(', '));
+      console.error('Please check your .env file');
       process.exit(1);
     }
 
@@ -99,16 +114,16 @@ const startServer = async () => {
     try {
       await connectDB();
     } catch (dbError) {
-      console.warn('⚠️  Database connection failed, but server will still start');
-      console.warn('📝 Make sure to configure MongoDB Atlas correctly');
+      console.warn('Database connection failed, but server will still start');
+      console.warn('Make sure to configure MongoDB Atlas correctly');
     }
 
     app.listen(port, () => {
-      console.log(`🚀 Server is running at http://localhost:${port}`);
-      console.log(`📝 Environment: ${process.env.NODE_ENV || 'development'}`);
-      console.log(`📚 API Version: ${process.env.API_VERSION || 'v1'}`);
-      console.log(`🔒 Security: Helmet enabled, Rate limiting active`);
-      console.log(`\n📋 Available endpoints:`);
+      console.log(`Server is running at http://localhost:${port}`);
+      console.log(`Environment: ${process.env.NODE_ENV || 'development'}`);
+      console.log(`API Version: ${process.env.API_VERSION || 'v1'}`);
+      console.log(`Security: Helmet enabled, Rate limiting active`);
+      console.log(`\nAvailable endpoints:`);
       console.log(`   GET  /api/health - Health check`);
       console.log(`   GET  /api/version - API version`);
       console.log(`   POST /api/auth/register - Register user`);
@@ -123,6 +138,10 @@ const startServer = async () => {
       console.log(`   DELETE /api/upload/image - Delete image`);
       console.log(`   GET  /api/users - Get all users`);
       console.log(`   POST /api/users - Create user`);
+      console.log(`   GET  /api/favorites - Get user favorites`);
+      console.log(`   POST /api/favorites/:carId - Add to favorites`);
+      console.log(`   DELETE /api/favorites/:carId - Remove from favorites`);
+      console.log(`   GET  /api/favorites/cars - Get favorite cars with details`);
     });
   } catch (error) {
     console.error('Failed to start server:', error);

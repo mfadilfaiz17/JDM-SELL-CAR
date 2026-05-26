@@ -81,7 +81,16 @@ export default function ComparisonModal({ isOpen, onClose, cars }: ComparisonMod
                       <span className="text-[11px] font-mono text-zinc-300 uppercase">
                         {spec.format 
                           ? spec.format(car[spec.key as keyof Car] as any) 
-                          : (car[spec.key as keyof Car] || 'N/A')}
+                          : (() => {
+                              const value = car[spec.key as keyof Car];
+                              if (typeof value === 'object' && value !== null) {
+                                return 'N/A';
+                              }
+                              if (value === undefined || value === null) {
+                                return 'N/A';
+                              }
+                              return String(value);
+                            })()}
                       </span>
                     </div>
                   ))}

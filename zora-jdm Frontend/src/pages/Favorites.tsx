@@ -3,20 +3,42 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
-import { motion } from 'motion/react';
-import { ALL_CARS, Car } from '../constants';
-import { Heart, X } from 'lucide-react';
-import React from 'react';
+import { motion, AnimatePresence } from 'motion/react';
+import { Car } from '../constants';
+import { Heart } from 'lucide-react';
+import React, { useState, useEffect } from 'react';
 import { useFavorites } from '../hooks/useFavorites';
+import { apiClient } from '../api/client';
+import { useCars } from '../hooks/useCars';
 
 interface FavoritesProps {
   onSelectCar: (car: Car) => void;
 }
 
 export default function Favorites({ onSelectCar }: FavoritesProps) {
-  const { favorites, toggleFavorite } = useFavorites();
-  
-  const favoriteCars = ALL_CARS.filter(car => favorites.includes(car.id));
+  const { favorites, toggleFavorite, loading: favoritesLoading } = useFavorites();
+  const { cars: allCars } = useCars();
+  const [favoriteCars, setFavoriteCars] = useState<Car[]>([]);
+  const [loading, setLoading] = useState(true);
+
+  useEffect(() => {
+    const loadFavoriteCars = async () => {
+      try {
+        // Always filter from allCars (which already has proper image mapping from useCars)
+        const filtered = allCars.filter(car => favorites.includes(car.id));
+        setFavoriteCars(filtered);
+      } catch (error) {
+        console.error('Failed to load favorite cars:', error);
+        setFavoriteCars([]);
+      } finally {
+        setLoading(false);
+      }
+    };
+
+    if (!favoritesLoading) {
+      loadFavoriteCars();
+    }
+  }, [favorites, allCars, favoritesLoading]);
 
   const formatIDR = (price: number) => {
     // price is in thousands (k), convert to actual USD then to IDR
@@ -27,6 +49,17 @@ export default function Favorites({ onSelectCar }: FavoritesProps) {
       maximumFractionDigits: 0,
     }).format(idr);
   };
+
+  if (loading || favoritesLoading) {
+    return (
+      <div className="px-6 md:px-12 py-16 bg-[#050505] min-h-screen flex items-center justify-center">
+        <div className="text-center">
+          <div className="w-16 h-16 border-4 border-red-500/30 border-t-red-500 rounded-full animate-spin mx-auto mb-4"></div>
+          <div className="text-red-500 font-mono text-[10px] tracking-[0.4em]">LOADING FAVORITES...</div>
+        </div>
+      </div>
+    );
+  }
 
   return (
     <div className="px-6 md:px-12 py-16 bg-[#050505] min-h-screen relative overflow-hidden">
@@ -52,16 +85,19 @@ export default function Favorites({ onSelectCar }: FavoritesProps) {
         </div>
       ) : (
         <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-8">
-          {favoriteCars.map((car, index) => (
+          <AnimatePresence mode="popLayout">
+            {favoriteCars.map((car, index) => (
             <motion.div
               key={car.id}
               initial="initial"
               animate="animate"
+              exit="exit"
               whileHover="hover"
               layout
               variants={{
                 initial: { opacity: 0, y: 20 },
                 animate: { opacity: 1, y: 0, transition: { delay: index * 0.05 } },
+                exit: { opacity: 0, scale: 0.8, transition: { duration: 0.3 } },
                 hover: { y: -8, scale: 1.02 }
               }}
               onClick={() => onSelectCar(car)}
@@ -75,7 +111,7 @@ export default function Favorites({ onSelectCar }: FavoritesProps) {
                 <div className="absolute top-0 right-0 w-12 h-12 border-t border-r border-white/0 group-hover:border-red-500/30 transition-all" />
                 <div className="absolute bottom-0 left-0 w-12 h-12 border-b border-l border-white/0 group-hover:border-red-500/30 transition-all" />
                 
-                <div className="flex justify-between items-start mb-6">
+                <div className="flex justify-between items-start mb-6 relative z-20">
                   <div className="flex flex-col gap-1">
                     <div className="text-[8px] font-mono text-zinc-800 tracking-tighter">FAVORITE 0{index + 1}</div>
                     <div className={`text-[7px] font-mono px-1 w-fit border ${
@@ -87,9 +123,11 @@ export default function Favorites({ onSelectCar }: FavoritesProps) {
                   <button
                     onClick={(e) => {
                       e.stopPropagation();
+                      console.log('❤️ Heart clicked in Favorites, removing car:', car.id);
                       toggleFavorite(car.id);
                     }}
-                    className="text-red-500 hover:text-red-400 transition-colors"
+                    className="text-red-500 hover:text-red-400 transition-colors relative z-20 cursor-pointer"
+                    title="Remove from favorites"
                   >
                     <Heart className="w-4 h-4" fill="currentColor" />
                   </button>
@@ -163,6 +201,7 @@ export default function Favorites({ onSelectCar }: FavoritesProps) {
               </div>
             </motion.div>
           ))}
+          </AnimatePresence>
         </div>
       )}
     </div>

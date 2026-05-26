@@ -122,11 +122,6 @@ export default function Navbar({ onSelectCar }: NavbarProps) {
               location.pathname === link.path ? 'text-cyan-400' : 'text-zinc-500 group-hover:text-white'
             }`}>
               {link.name}
-              {link.name === 'Favorites' && favoriteCount > 0 && (
-                <span className="ml-1 px-1.5 py-0.5 bg-cyan-500 text-black text-[7px] font-black rounded">
-                  {favoriteCount}
-                </span>
-              )}
             </span>
             {location.pathname === link.path && (
               <motion.div 
